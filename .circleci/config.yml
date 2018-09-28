@@ -34,6 +34,8 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
+      - run: chmod +x ./gradlew
+
       - run: ./gradlew dependencies
 
       - save_cache:
@@ -47,9 +49,13 @@ jobs:
 
     steps:
       - checkout
+      
       - run:
           name: Test
           command: ./gradlew test
+
+      - run: chmod +x ./gradlew
+
       - run:
           name: Generate code coverage
           command: |
