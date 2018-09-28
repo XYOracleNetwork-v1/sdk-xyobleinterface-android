@@ -25,6 +25,8 @@ import java.nio.ByteBuffer
  * A Bluetooth client that can create a XyoNetworkPipe.
  */
 class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int) : XYBluetoothDevice(context, device, hash) {
+
+    // TODO abstract this value to be the current state of the origin chain (previous hash)
     val hashValue = Random().nextLong()
 
     fun createPipe (catalogueInterface: XyoNetworkProcedureCatalogueInterface) : Deferred<XyoNetworkPipe?> = async {
@@ -295,6 +297,8 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
 
         override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: HashMap<Int, XYBluetoothDevice>, foundDevices: HashMap<Int, XYBluetoothDevice>) {
             val device = scanResult.device
+
+            // get the device address to make sure you don't connect to yourself
             val bluetoothManager = context.applicationContext?.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
             val bluetoothAdapter = bluetoothManager?.adapter
 

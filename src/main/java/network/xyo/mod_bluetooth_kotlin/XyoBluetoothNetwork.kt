@@ -3,20 +3,14 @@ package network.xyo.mod_bluetooth_kotlin
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.os.ParcelUuid
-import android.util.Log
-import android.util.LongSparseArray
 import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.delay
-import kotlinx.coroutines.experimental.launch
 import network.xyo.ble.gatt.server.*
 import network.xyo.ble.scanner.XYFilteredSmartScanModern
 import network.xyo.core.XYBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.network.XyoNetworkProviderInterface
-import java.net.Socket
 import java.util.*
-import kotlin.collections.HashMap
 import kotlin.coroutines.experimental.suspendCoroutine
 
 /**
@@ -59,7 +53,7 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
                     override fun onConnectionRequest() {
                         waitingOnCount++
 
-                        if (STRICT_TURN_OFF) {
+                        if (STRICT_TRY) {
                             serverFinder.stop()
                             clientFinder.stop()
                         }
@@ -69,7 +63,7 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
                         waitingOnCount--
                         connection.pipe?.close()
 
-                        if (STRICT_TURN_OFF) {
+                        if (STRICT_TRY) {
                             serverFinder.start(procedureCatalogue)
                             clientFinder.start(procedureCatalogue)
                         }
@@ -148,7 +142,7 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
     }
 
     private fun compareUnsignedLongs (compare : Long, to : Long) : Boolean {
-        // todo implement unsigned comparison
+        // TODO implement unsigned comparison
         return Math.abs(compare) > to
     }
 
@@ -156,6 +150,6 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
         /**
          * Disable the other network when another network is trying to connect.
          */
-        const val STRICT_TURN_OFF = false
+        const val STRICT_TRY = false
     }
 }

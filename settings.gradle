@@ -1,4 +1,0 @@
-include ':sdk-core-kotlin'
-include ':sdk-android-library'
-project(':sdk-core-kotlin').projectDir = new File('../sdk-core-kotlin')
-project(':sdk-android-library').projectDir = new File('../sdk-ble-android/sdk-android-library')
