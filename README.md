@@ -1,19 +1,19 @@
-# mod-bluetooth-kotlin
+# mod-bluetooth-android
 
-[![](https://jitpack.io/v/XYOracleNetwork/mod-bluetooth-kotlin.svg)](https://jitpack.io/#XYOracleNetwork/mod-bluetooth-kotlin) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev) [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-kotlin.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-kotlin)
+[![](https://jitpack.io/v/XYOracleNetwork/mod-bluetooth-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-bluetooth-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev) [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android)
 
 A basic network module that complies to the XYO Network Provider Interface.
 
 ## Installing
-You can add mod-bluetooth-kotlin to your existing app by cloning the project and manually adding it to your build.gradle or by using JitPack:
+You can add mod-bluetooth-android to your existing app by cloning the project and manually adding it to your build.gradle or by using JitPack:
 
 ```
-git clone git@github.com:XYOracleNetwork/mod-bluetooth-kotlin.git
+git clone git@github.com:XYOracleNetwork/mod-bluetooth-android.git
 ```
 
 ```gradle
 dependencies {
-    implementation 'com.github.XYOracleNetwork:mod-bluetooth-kotlin:v0.1.0-beta'
+    implementation 'com.github.XYOracleNetwork:mod-bluetooth-android:v0.1.0-beta'
 }
 ```
 
