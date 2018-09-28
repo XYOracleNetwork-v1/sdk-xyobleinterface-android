@@ -7,7 +7,7 @@ jobs:
   build:
     docker:
       # specify the version you desire here
-      - image: circleci/android:api-25-alpha
+      - image: circleci/android:api-28-alpha
       
     environment:
       JVM_OPTS: -Xmx3200m
@@ -34,7 +34,7 @@ jobs:
           # fallback to using the latest cache if no exact match is found
           - v1-dependencies-
 
-      - run: gradle dependencies
+      - run: gradle androidDependencies
 
       - save_cache:
           paths:
@@ -43,7 +43,7 @@ jobs:
 
   test:
     docker:
-      - image: circleci/openjdk:8-jdk
+      - image: circleci/android:api-28-alpha
 
     steps:
       - checkout
