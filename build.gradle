@@ -1,0 +1,75 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+group="com.github.XYOracleNetwork"
+
+buildscript {
+    ext.kotlin_version = '1.2.60'
+    ext.android_plugin_version = '3.1.4'
+    ext.android_support_version = '27.1.1'
+    ext.androidx_version = '1.0.0-rc02'
+
+    repositories {
+        jcenter()
+        google()
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:$android_plugin_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+    }
+
+    ext {
+        pluginDependencies = [
+                android      : "com.android.tools.build:gradle:$android_plugin_version",
+                kotlin       : "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        ]
+    }
+}
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        publishNonDefault true
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+
+    packagingOptions {
+        exclude 'META-INF/build.kotlin_module'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    testImplementation 'junit:junit:4.12'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation 'com.github.kotlin-graphics:kotlin-unsigned:v2.1'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:0.26.0"
+    implementation 'org.jetbrains.kotlinx:kotlinx-coroutines-android:0.26.0'
+    implementation 'com.github.XYOracleNetwork:sdk-core-android:develop-SNAPSHOT'
+
+    implementation project (":sdk-android-library")
+    implementation project (":sdk-core-kotlin")
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven { url 'https://jitpack.io' }
+        google()
+    }
+}
