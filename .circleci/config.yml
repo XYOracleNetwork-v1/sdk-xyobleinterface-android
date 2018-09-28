@@ -49,12 +49,12 @@ jobs:
 
     steps:
       - checkout
-      
+
+      - run: chmod +x ./gradlew
+
       - run:
           name: Test
           command: ./gradlew test
-
-      - run: chmod +x ./gradlew
 
       - run:
           name: Generate code coverage
