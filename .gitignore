@@ -11,5 +11,6 @@
 .DS_Store?
 *.apk
 google-services.json
+local.properties
 core-android-sample/local.properties
 gradle/
