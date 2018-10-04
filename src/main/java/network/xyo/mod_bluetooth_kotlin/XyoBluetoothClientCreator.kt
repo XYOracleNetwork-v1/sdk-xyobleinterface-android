@@ -30,24 +30,18 @@ class XyoBluetoothClientCreator (private val scanner: XYFilteredSmartScanModern)
         logInfo("XyoBluetoothClientCreator started.")
         canCreate = true
 
-        launch {
-            // val pipe = getClientFromNearby(procedureCatalogueInterface).await()
+        val scannerCallback = object :  XYFilteredSmartScan.Listener() {
+            override fun detected(device: XYBluetoothDevice) {
+                super.detected(device)
 
-            if (null == null) {
-                val scannerCallback = object :  XYFilteredSmartScan.Listener() {
-                    override fun detected(device: XYBluetoothDevice) {
-                        super.detected(device)
-
-                        if (!gettingDevice) {
-                            logInfo(gettingDevice.toString())
-                            checkDevice(device, procedureCatalogueInterface)
-                        }
-                    }
+                if (!gettingDevice) {
+                    logInfo(gettingDevice.toString())
+                    checkDevice(device, procedureCatalogueInterface)
                 }
-
-                scanner.addListener(scannerKey, scannerCallback)
             }
         }
+
+        scanner.addListener(scannerKey, scannerCallback)
     }
 
     private fun getClientFromNearby (procedureCatalogue: XyoNetworkProcedureCatalogueInterface) : Deferred<XyoNetworkPipe?> = async {
@@ -101,7 +95,6 @@ class XyoBluetoothClientCreator (private val scanner: XYFilteredSmartScanModern)
 
     init {
         XyoBluetoothClient.enable(true)
-        scanner.start()
     }
 
     companion object {
