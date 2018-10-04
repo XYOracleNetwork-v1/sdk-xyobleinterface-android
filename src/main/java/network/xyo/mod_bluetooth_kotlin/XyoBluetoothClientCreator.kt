@@ -38,6 +38,7 @@ class XyoBluetoothClientCreator (private val scanner: XYFilteredSmartScanModern)
                     logInfo(gettingDevice.toString())
                     checkDevice(device, procedureCatalogueInterface)
                 }
+
             }
         }
 

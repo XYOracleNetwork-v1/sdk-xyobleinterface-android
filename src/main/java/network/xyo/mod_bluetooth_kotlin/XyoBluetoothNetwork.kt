@@ -3,6 +3,7 @@ package network.xyo.mod_bluetooth_kotlin
 import android.bluetooth.le.AdvertiseSettings
 import android.content.Context
 import android.os.ParcelUuid
+import android.util.Log
 import kotlinx.coroutines.experimental.async
 import network.xyo.ble.gatt.server.*
 import network.xyo.ble.scanner.XYFilteredSmartScanModern

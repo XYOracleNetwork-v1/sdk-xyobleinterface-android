@@ -30,44 +30,55 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
     val hashValue = Random().nextLong()
 
     fun createPipe (catalogueInterface: XyoNetworkProcedureCatalogueInterface) : Deferred<XyoNetworkPipe?> = async {
-        val sizeEncodedProcedureCatalogue = getSizeEncodedProcedureCatalogue(catalogueInterface)
         return@async suspendCoroutine<XyoNetworkPipe?> { cont ->
             launch {
-                val status = connection {
-                    // writes the encoded catalogue to the server
-                    logInfo("Writing catalogue to server.")
-                    val writeError = findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, sizeEncodedProcedureCatalogue).await()
+                val connection = connection {
+                    val pipe = doCreatePipe(catalogueInterface).await()
 
-                    // if there is an error break
-                    if (writeError.error != null) {
-                        logInfo("Error writing catalogue to server. ${writeError.error}")
-                        cont.resume(null)
-                        return@connection
-                    }
-
-                    logInfo("Wrote catalogue to server.")
-
-                    logInfo("Going to read the server's response.")
-
-                    // read the response from the server
-                    val incomingPacket = readIncommoding()
-
-                    logInfo("Read the server's response.")
-
-                    // check if the packet was read successfully
-                    if (incomingPacket != null) {
-                        logInfo("Read the server's response (good).")
-                        cont.resume(createPipeFromResponse(incomingPacket))
-                    } else {
-                        logInfo("Error reading the server's response.")
-                        cont.resume(null)
-                    }
+                    cont.resume(pipe)
+                    coroutineContext.cancel()
                 }.await()
 
-                if (status.error != null) {
-                    cont.resume(null)
-                }
+
+
+                Log.v("HERE 123", "HELLO")
+                cont.resume(null)
+                coroutineContext.cancel()
+                coroutineContext.cancelChildren()
+                cont.context.cancelChildren()
+                return@launch
             }
+        }
+    }
+
+    private fun doCreatePipe (catalogueInterface: XyoNetworkProcedureCatalogueInterface) : Deferred<XyoNetworkPipe?> = async {
+        val sizeEncodedProcedureCatalogue = getSizeEncodedProcedureCatalogue(catalogueInterface)
+        // writes the encoded catalogue to the server
+        logInfo("Writing catalogue to server.")
+        val writeError = findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, sizeEncodedProcedureCatalogue).await()
+
+        // if there is an error break
+        if (writeError.error != null) {
+            logInfo("Error writing catalogue to server. ${writeError.error}")
+            return@async null
+        }
+
+        logInfo("Wrote catalogue to server.")
+
+        logInfo("Going to read the server's response.")
+
+        // read the response from the server
+        val incomingPacket = readIncommoding()
+
+        logInfo("Read the server's response.")
+
+        // check if the packet was read successfully
+        if (incomingPacket != null) {
+            logInfo("Read the server's response (good).")
+            return@async createPipeFromResponse(incomingPacket)
+        } else {
+            logInfo("Error reading the server's response.")
+            return@async null
         }
     }
 
@@ -244,6 +255,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
             // if you are here, there was an error
             logInfo("Error reading ${firstReadPacket.error}.")
             cont.resume(null)
+            coroutineContext.cancel()
         }
 
     }
