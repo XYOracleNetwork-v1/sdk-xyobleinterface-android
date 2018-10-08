@@ -1,11 +1,11 @@
 package network.xyo.mod_bluetooth_kotlin
 
 import android.bluetooth.le.AdvertiseSettings
-import android.content.Context
 import android.os.ParcelUuid
-import android.util.Log
+import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.async
-import network.xyo.ble.gatt.server.*
+import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
+import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYFilteredSmartScanModern
 import network.xyo.core.XYBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
@@ -22,7 +22,7 @@ import kotlin.coroutines.experimental.suspendCoroutine
  * @param advertiser The BLE advertiser to use when advertising the BLE XYO Service.
  * @param context The Android Context to use when using BLE services.
  */
-class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advertiser: XYBluetoothAdvertiser, scanner : XYFilteredSmartScanModern) : XyoNetworkProviderInterface, XYBase() {
+class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertiser: XYBluetoothAdvertiser, scanner: XYFilteredSmartScanModern) : XyoNetworkProviderInterface, XYBase() {
     private val clientFinder = XyoBluetoothClientCreator(scanner)
     private val serverFinder = XyoBluetoothServer(bleServer)
 
@@ -37,7 +37,7 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
     /**
      * The implementation to find a peer given a procedureCatalogue.
      */
-    override fun find(procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = async {
+    override fun find(procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.async {
         return@async suspendCoroutine<XyoNetworkPipe> { cont ->
             val serverKey = "server$this"
             val clientKey = "client$this"
@@ -135,30 +135,30 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
         }
     }
 
-        /**
-         * Start a advertisement cycle
-         */
-        private fun startAdvertiser () = async {
-            advertiser.changeContactable(true).await()
-            advertiser.changeIncludeDeviceName(true).await()
-            advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY).await()
-            advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH).await()
-            advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE)).await()
-        }
+    /**
+     * Start a advertisement cycle
+     */
+    private fun startAdvertiser() = GlobalScope.async {
+        advertiser.changeContactable(true).await()
+        advertiser.changeIncludeDeviceName(true).await()
+        advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY).await()
+        advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH).await()
+        advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE)).await()
+    }
 
-        /**
-         * Stop the current advertisement cycle
-         */
-        private fun stopAdvertiser () {
-            advertiser.stopAdvertising()
-        }
+    /**
+     * Stop the current advertisement cycle
+     */
+    private fun stopAdvertiser() {
+        advertiser.stopAdvertising()
+    }
 
-        private fun compareUnsignedLongs (compare : Long, to : Long) : Boolean {
-            // TODO implement unsigned comparison
-            return Math.abs(compare) > to
-        }
+    private fun compareUnsignedLongs(compare: Long, to: Long): Boolean {
+        // TODO implement unsigned comparison
+        return Math.abs(compare) > to
+    }
 
-        companion object {
+    companion object {
         /**
          * Disable the other network when another network is trying to connect.
          */

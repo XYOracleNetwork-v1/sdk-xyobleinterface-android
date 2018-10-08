@@ -2,8 +2,11 @@ package network.xyo.mod_bluetooth_kotlin
 
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
+import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.os.ParcelUuid
+import android.util.Log
+import kotlinx.coroutines.experimental.*
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.gatt.XYBluetoothError
@@ -13,25 +16,22 @@ import network.xyo.sdkcorekotlin.data.XyoUnsignedHelper
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
+import java.nio.ByteBuffer
 import java.util.*
 import kotlin.coroutines.experimental.suspendCoroutine
-import android.bluetooth.BluetoothManager
-import android.util.Log
-import kotlinx.coroutines.experimental.*
-import java.nio.ByteBuffer
 
 
 /**
  * A Bluetooth client that can create a XyoNetworkPipe.
  */
-class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int) : XYBluetoothDevice(context, device, hash) {
+class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) : XYBluetoothDevice(context, device, hash) {
 
     // TODO abstract this value to be the current state of the origin chain (previous hash)
     val hashValue = Random().nextLong()
 
-    fun createPipe (catalogueInterface: XyoNetworkProcedureCatalogueInterface) : Deferred<XyoNetworkPipe?> = async {
+    fun createPipe(catalogueInterface: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
         return@async suspendCoroutine<XyoNetworkPipe?> { cont ->
-            launch {
+            GlobalScope.launch {
                 val connection = connection {
                     val pipe = doCreatePipe(catalogueInterface).await()
 
@@ -51,7 +51,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
         }
     }
 
-    private fun doCreatePipe (catalogueInterface: XyoNetworkProcedureCatalogueInterface) : Deferred<XyoNetworkPipe?> = async {
+    private fun doCreatePipe(catalogueInterface: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
         val sizeEncodedProcedureCatalogue = getSizeEncodedProcedureCatalogue(catalogueInterface)
         // writes the encoded catalogue to the server
         logInfo("Writing catalogue to server.")
@@ -82,15 +82,15 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
         }
     }
 
-    private fun createPipeFromResponse (incomingPacket: ByteArray) : XyoBluetoothClientPipe {
+    private fun createPipeFromResponse(incomingPacket: ByteArray): XyoBluetoothClientPipe {
         val sizeOfCatalog = XyoUnsignedHelper.readUnsignedByte(byteArrayOf(incomingPacket[0]))
         val catalog = incomingPacket.copyOfRange(1, sizeOfCatalog + 1)
         val initiationData = incomingPacket.copyOfRange(sizeOfCatalog + 1, incomingPacket.size)
         return XyoBluetoothClientPipe(catalog, initiationData)
     }
 
-    private fun getSizeEncodedProcedureCatalogue (catalogueInterface: XyoNetworkProcedureCatalogueInterface) : ByteArray {
-        val firstDataToSend =  catalogueInterface.getEncodedCanDo()
+    private fun getSizeEncodedProcedureCatalogue(catalogueInterface: XyoNetworkProcedureCatalogueInterface): ByteArray {
+        val firstDataToSend = catalogueInterface.getEncodedCanDo()
         val sideOfCatalogue = XyoUnsignedHelper.createUnsignedByte(firstDataToSend.size)
         val merger = XyoByteArraySetter(3)
         merger.add(ByteBuffer.allocate(8).putLong(hashValue).array(), 0)
@@ -99,7 +99,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
         return merger.merge()
     }
 
-    inner class XyoBluetoothClientPipe (private val role : ByteArray, override val initiationData: ByteArray?) : XyoNetworkPipe() {
+    inner class XyoBluetoothClientPipe(private val role: ByteArray, override val initiationData: ByteArray?) : XyoNetworkPipe() {
         override val peer: XyoNetworkPeer = object : XyoNetworkPeer() {
             override fun getRole(): ByteArray {
                 return role
@@ -110,22 +110,22 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
             }
         }
 
-        override fun close(): Deferred<Any?> = async {
+        override fun close(): Deferred<Any?> = GlobalScope.async {
             disconnect().await()
             this@XyoBluetoothClient.close().await()
         }
 
-        override fun send(data: ByteArray, waitForResponse : Boolean): Deferred<ByteArray?> = async {
+        override fun send(data: ByteArray, waitForResponse: Boolean): Deferred<ByteArray?> = GlobalScope.async {
             // the packet to send to the server
             val outgoingPacket = XyoBluetoothOutgoingPacket(20, data)
             return@async suspendCoroutine<ByteArray?> { cont ->
-                launch {
+                GlobalScope.launch {
                     val status = connection {
                         // the key to add the connection listener
                         val disconnectKey = this.toString()
 
                         // send a receive a packet
-                        val sendAndReceive = async {
+                        val sendAndReceive = GlobalScope.async {
 
                             // send the data
                             logInfo("Sending entire packet to the server.")
@@ -137,7 +137,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
                             // check if there was an error
                             if (packetError == null) {
                                 logInfo("Sent entire packet to the server (good).")
-                                var valueIn : ByteArray? = null
+                                var valueIn: ByteArray? = null
 
                                 // read the incoming packet
 
@@ -204,7 +204,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
         }
     }
 
-    private fun sendPacket (outgoingPacket: XyoBluetoothOutgoingPacket) : Deferred<XYBluetoothError?> = async {
+    private fun sendPacket(outgoingPacket: XyoBluetoothOutgoingPacket): Deferred<XYBluetoothError?> = GlobalScope.async {
         logInfo("Sending Entire Packet sendPacket.")
         // while the packet can still send
         while (outgoingPacket.canSendNext) {
@@ -225,12 +225,12 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
         return@async null
     }
 
-    private suspend fun readIncommoding () = suspendCoroutine<ByteArray?> { cont ->
+    private suspend fun readIncommoding() = suspendCoroutine<ByteArray?> { cont ->
         logInfo("Reading incoming packet readIncommoding.")
-        launch {
+        GlobalScope.launch {
             // read the first packet
             logInfo("Reading first packet from server.")
-            val firstReadPacket  = findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_READ).await()
+            val firstReadPacket = findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_READ).await()
 
             // check if there is an error
             if (firstReadPacket.error == null) {
@@ -260,7 +260,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
 
     }
 
-    private suspend fun readEntirePacket (incomingPacket : XyoBluetoothIncomingPacket) : ByteArray? {
+    private suspend fun readEntirePacket(incomingPacket: XyoBluetoothIncomingPacket): ByteArray? {
         logInfo("Going to read entire packet readEntirePacket.")
 
         // while the incoming packet can still send
@@ -299,7 +299,7 @@ class XyoBluetoothClient (context: Context, device: BluetoothDevice?, hash : Int
     }
 
     companion object : XYCreator() {
-        fun enable (enable: Boolean) {
+        fun enable(enable: Boolean) {
             if (enable) {
                 serviceToCreator[XyoUuids.XYO_SERVICE] = this
             } else {
