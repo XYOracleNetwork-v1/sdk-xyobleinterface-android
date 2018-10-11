@@ -4,8 +4,14 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
-import kotlinx.coroutines.experimental.*
-import network.xyo.ble.gatt.server.*
+import kotlinx.coroutines.experimental.Deferred
+import kotlinx.coroutines.experimental.GlobalScope
+import kotlinx.coroutines.experimental.async
+import kotlinx.coroutines.experimental.cancel
+import network.xyo.ble.gatt.server.XYBluetoothGattServer
+import network.xyo.ble.gatt.server.XYBluetoothReadCharacteristic
+import network.xyo.ble.gatt.server.XYBluetoothService
+import network.xyo.ble.gatt.server.XYBluetoothWriteCharacteristic
 import network.xyo.sdkcorekotlin.data.XyoUnsignedHelper
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
@@ -82,12 +88,12 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
             }
         }
 
-        override fun close(): Deferred<Any?> = async {
+        override fun close(): Deferred<Any?> = GlobalScope.async {
             bluetoothServer.disconnect(bluetoothDevice)
         }
 
         override fun send(data: ByteArray,  waitForResponse : Boolean) : Deferred<ByteArray?> {
-            return async {
+            return GlobalScope.async {
                 // check if the device is still connected
                 if (!bluetoothServer.isDeviceConnected(bluetoothDevice)) {
                     return@async null
@@ -98,7 +104,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
                 val returnValue = suspendCoroutine <ByteArray?> { cont ->
                     // send a packet
-                    async {
+                    GlobalScope.async {
                         val readValueJob = sendAwait(outgoingPacket, waitForResponse)
 
                         val listener = object : BluetoothGattServerCallback() {
@@ -124,7 +130,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
             }
         }
 
-        private fun sendAwait (outgoingPacket: XyoBluetoothOutgoingPacket, waitForResponse: Boolean) = async {
+        private fun sendAwait (outgoingPacket: XyoBluetoothOutgoingPacket, waitForResponse: Boolean) = GlobalScope.async {
             sendPacket(outgoingPacket, readCharacteristic, bluetoothDevice)
 
             if (waitForResponse) {
