@@ -32,6 +32,7 @@ class XyoBluetoothNetwork (bleServer : XYBluetoothGattServer, private val advert
     override fun stop() {
         clientFinder.stop()
         serverFinder.stop()
+        stopAdvertiser()
     }
 
     /**
