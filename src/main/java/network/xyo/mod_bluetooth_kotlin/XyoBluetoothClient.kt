@@ -18,6 +18,8 @@ import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import java.nio.ByteBuffer
 import java.util.*
+import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.HashMap
 import kotlin.coroutines.experimental.suspendCoroutine
 
 
@@ -86,7 +88,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
         val sizeOfCatalog = XyoUnsignedHelper.readUnsignedByte(byteArrayOf(incomingPacket[0]))
         val catalog = incomingPacket.copyOfRange(1, sizeOfCatalog + 1)
         val initiationData = incomingPacket.copyOfRange(sizeOfCatalog + 1, incomingPacket.size)
-        return XyoBluetoothClientPipe(catalog, initiationData)
+        return XyoBluetoothClientPipe(catalog, initiationData, rssi)
     }
 
     private fun getSizeEncodedProcedureCatalogue(catalogueInterface: XyoNetworkProcedureCatalogueInterface): ByteArray {
@@ -99,7 +101,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
         return merger.merge()
     }
 
-    inner class XyoBluetoothClientPipe(private val role: ByteArray, override val initiationData: ByteArray?) : XyoNetworkPipe() {
+    inner class XyoBluetoothClientPipe(private val role: ByteArray, override val initiationData: ByteArray?, val rssi : Int?) : XyoNetworkPipe() {
         override val peer: XyoNetworkPeer = object : XyoNetworkPeer() {
             override fun getRole(): ByteArray {
                 return role
@@ -144,6 +146,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
                                 if (waitForResponse) {
                                     logInfo("Going to read entire server response packet.")
 
+                                    delay(WAIT_FOR_RESPONSE_DELAY)
                                     valueIn = readIncommoding()
                                 }
 
@@ -299,6 +302,8 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
     }
 
     companion object : XYCreator() {
+        const val WAIT_FOR_RESPONSE_DELAY = 750
+
         fun enable(enable: Boolean) {
             if (enable) {
                 serviceToCreator[XyoUuids.XYO_SERVICE] = this
@@ -307,7 +312,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
             }
         }
 
-        override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: HashMap<Int, XYBluetoothDevice>, foundDevices: HashMap<Int, XYBluetoothDevice>) {
+        override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<Int, XYBluetoothDevice>, foundDevices: HashMap<Int, XYBluetoothDevice>) {
             val device = scanResult.device
 
             // get the device address to make sure you don't connect to yourself

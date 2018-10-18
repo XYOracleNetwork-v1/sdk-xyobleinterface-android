@@ -99,6 +99,6 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
 
     companion object {
         val CONNECTION_DELAY: Int
-            get() = (Math.random() * 8_000).toInt()
+            get() = (Math.random() * 3_000).toInt()
     }
 }

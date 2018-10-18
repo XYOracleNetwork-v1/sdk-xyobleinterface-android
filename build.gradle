@@ -63,7 +63,7 @@ dependencies {
 
     implementation 'com.github.XYOracleNetwork:sdk-core-android:develop-SNAPSHOT'
     implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:develop-SNAPSHOT'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:ble-server-SNAPSHOT'
+    implementation 'com.github.XYOracleNetwork:sdk-ble-android:develop-SNAPSHOT'
 }
 
 allprojects {
