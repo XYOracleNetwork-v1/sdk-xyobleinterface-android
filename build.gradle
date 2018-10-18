@@ -50,6 +50,11 @@ android {
     packagingOptions {
         exclude 'META-INF/build.kotlin_module'
     }
+
+    lintOptions {
+        // for bouncy castle
+        warning 'InvalidPackage'
+    }
 }
 
 dependencies {
