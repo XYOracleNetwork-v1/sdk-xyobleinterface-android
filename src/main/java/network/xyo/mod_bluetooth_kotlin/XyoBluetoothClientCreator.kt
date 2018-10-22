@@ -83,9 +83,12 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
 
             logInfo("Could not create pipe : ${device.address}")
             connectionDevice.onFail()
+        } else {
+            logInfo("Device is not XyoBluetoothClient : ${device.address}")
+            gettingDevice = false
+            return@async null
         }
 
-        logInfo("Device is not XyoBluetoothClient : ${device.address}")
         GlobalScope.async {
             delay(CONNECTION_DELAY)
             gettingDevice = false
