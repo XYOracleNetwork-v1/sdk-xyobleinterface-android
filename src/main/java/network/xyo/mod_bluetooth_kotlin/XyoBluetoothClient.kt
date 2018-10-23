@@ -43,7 +43,6 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
 
 
 
-                Log.v("HERE 123", "HELLO")
                 cont.resume(null)
                 coroutineContext.cancel()
                 coroutineContext.cancelChildren()

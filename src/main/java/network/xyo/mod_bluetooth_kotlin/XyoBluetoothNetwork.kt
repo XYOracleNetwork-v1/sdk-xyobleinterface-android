@@ -25,6 +25,7 @@ import kotlin.coroutines.experimental.suspendCoroutine
 class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertiser: XYBluetoothAdvertiser, scanner: XYFilteredSmartScanModern) : XyoNetworkProviderInterface, XYBase() {
     private val clientFinder = XyoBluetoothClientCreator(scanner)
     private val serverFinder = XyoBluetoothServer(bleServer)
+    var connectionRssi : Int? = null
 
     /**
      * The implementation to stop all network services.
@@ -39,6 +40,7 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
      * The implementation to find a peer given a procedureCatalogue.
      */
     override fun find(procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.async {
+        connectionRssi = null
         return@async suspendCoroutine<XyoNetworkPipe> { cont ->
             val serverKey = "server$this"
             val clientKey = "client$this"
@@ -117,6 +119,13 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
 
                             clientFinder.removeListener(clientKey)
                             serverFinder.removeListener(serverKey)
+
+
+                            val createdPipe = highest?.pipe
+
+                            if (createdPipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
+                                connectionRssi = createdPipe.rssi
+                            }
 
                             /**
                              * Resume the find call.
