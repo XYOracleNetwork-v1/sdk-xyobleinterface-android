@@ -60,7 +60,7 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
              */
             val listener = object : XyoBluetoothPipeCreatorListener {
                 override fun onCreatedConnection(connection: XyoBluetoothConnection) {
-                    val key = "connection${connection.hashValue}"
+                    val key = connection.toString()
                     connection.addListener(key, object : XyoBluetoothConnectionListener {
 
                         override fun onConnectionRequest() {
@@ -95,17 +95,8 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                              * Find the connection with the highest hash value.
                              */
                             for (doneConnection in doneConnections) {
-                                if (compareUnsignedLongs(doneConnection.hashValue, highest?.hashValue
-                                                ?: 0)) {
-                                    doneConnection.removeListener("connection${doneConnection.hashValue}")
-                                    highest = doneConnection
-                                } else {
-                                    /**
-                                     * If it not higher, disconnect.
-                                     */
-                                    doneConnection.removeListener("connection${doneConnection.hashValue}")
-                                    doneConnection.pipe?.close()
-                                }
+                                doneConnection.removeListener(connection.toString())
+                                highest = doneConnection
                             }
 
 
@@ -161,11 +152,6 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
      */
     private fun stopAdvertiser() {
         advertiser.stopAdvertising()
-    }
-
-    private fun compareUnsignedLongs(compare: Long, to: Long): Boolean {
-        // TODO implement unsigned comparison
-        return Math.abs(compare) > to
     }
 
     companion object {

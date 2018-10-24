@@ -26,11 +26,7 @@ import kotlin.coroutines.experimental.suspendCoroutine
 /**
  * A Bluetooth client that can create a XyoNetworkPipe.
  */
-class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) : XYBluetoothDevice(context, device, hash) {
-
-    // TODO abstract this value to be the current state of the origin chain (previous hash)
-    val hashValue = Random().nextLong()
-
+class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int) : XYBluetoothDevice(context, device, hash) {
     fun createPipe(catalogueInterface: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
         return@async suspendCoroutine<XyoNetworkPipe?> { cont ->
             GlobalScope.launch {
@@ -93,10 +89,9 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash: Int) 
     private fun getSizeEncodedProcedureCatalogue(catalogueInterface: XyoNetworkProcedureCatalogueInterface): ByteArray {
         val firstDataToSend = catalogueInterface.getEncodedCanDo()
         val sideOfCatalogue = XyoUnsignedHelper.createUnsignedByte(firstDataToSend.size)
-        val merger = XyoByteArraySetter(3)
-        merger.add(ByteBuffer.allocate(8).putLong(hashValue).array(), 0)
-        merger.add(sideOfCatalogue, 1)
-        merger.add(firstDataToSend, 2)
+        val merger = XyoByteArraySetter(2)
+        merger.add(sideOfCatalogue, 0)
+        merger.add(firstDataToSend, 1)
         return merger.merge()
     }
 

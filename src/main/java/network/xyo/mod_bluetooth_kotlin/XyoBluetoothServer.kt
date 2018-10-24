@@ -42,20 +42,18 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         bluetoothWriteCharacteristic.addResponder(responderKey, object : XYBluetoothWriteCharacteristic.XYBluetoothWriteCharacteristicResponder {
             override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
                 if (writeRequestValue != null && device != null) {
-                    logInfo("XyoBluetoothServer onWriteRequest!!")
+                    logInfo("XyoBluetoothServer onWriteRequest!")
                     // unpack the catalogue
 
-                    val hash = ByteBuffer.wrap(writeRequestValue).long
-                    val connectionDevice = XyoBluetoothConnection(hash)
+                    val connectionDevice = XyoBluetoothConnection()
                     onCreateConnection(connectionDevice)
                     connectionDevice.onTry()
 
-                    val sizeOfCatalogue = XyoUnsignedHelper.readUnsignedByte(byteArrayOf(writeRequestValue[8]))
-                    val catalogue = writeRequestValue.copyOfRange(9, 9 + sizeOfCatalogue)
+                    val sizeOfCatalogue = XyoUnsignedHelper.readUnsignedByte(byteArrayOf(writeRequestValue[0]))
+                    val catalogue = writeRequestValue.copyOfRange(1, sizeOfCatalogue + 1)
 
                     // check if the request can do the catalogue
                     if (procedureCatalogueInterface.canDo(catalogue)) {
-
                         val pipe = XyoBluetoothServerPipe(device, bluetoothReadCharacteristic, bluetoothWriteCharacteristic, catalogue)
                         connectionDevice.pipe = pipe
                         connectionDevice.onCreate(pipe)
@@ -67,6 +65,18 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                 return false
             }
         })
+    }
+
+
+    fun ByteArray.toHexString(): String {
+        val builder = StringBuilder()
+        val it = this.iterator()
+        builder.append("0x")
+        while (it.hasNext()) {
+            builder.append(String.format("%02X ", it.next()))
+        }
+
+        return builder.toString()
     }
 
     /**

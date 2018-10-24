@@ -6,7 +6,7 @@ import java.util.HashMap
 /**
  * A class to manage a bluetooth connection that is creating a pipe.
  */
-class XyoBluetoothConnection (val hashValue : Long) {
+class XyoBluetoothConnection {
     private val listeners = HashMap<String, XyoBluetoothConnectionListener>()
 
     /**

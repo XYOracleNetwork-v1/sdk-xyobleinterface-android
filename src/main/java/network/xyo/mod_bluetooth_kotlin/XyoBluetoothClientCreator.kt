@@ -63,7 +63,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
         logInfo("Trying device : ${device.address}")
         if (device is XyoBluetoothClient) {
             logInfo("Device is XyoBluetoothClient : ${device.address}")
-            val connectionDevice = XyoBluetoothConnection(device.hashValue)
+            val connectionDevice = XyoBluetoothConnection()
             onCreateConnection(connectionDevice)
 
             connectionDevice.onTry()
