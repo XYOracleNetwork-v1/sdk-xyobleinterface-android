@@ -4,10 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.cancel
+import kotlinx.coroutines.experimental.*
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.gatt.server.XYBluetoothReadCharacteristic
 import network.xyo.ble.gatt.server.XYBluetoothService
@@ -67,18 +64,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         })
     }
 
-
-    fun ByteArray.toHexString(): String {
-        val builder = StringBuilder()
-        val it = this.iterator()
-        builder.append("0x")
-        while (it.hasNext()) {
-            builder.append(String.format("%02X ", it.next()))
-        }
-
-        return builder.toString()
-    }
-
     /**
      * This pipe will be creating after a negotiation has occurred.
      */
@@ -112,7 +97,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                 val outgoingPacket = XyoBluetoothOutgoingPacket(20, data)
                 val disconnectKey = "${this}disconnect"
 
-                val returnValue = suspendCoroutine <ByteArray?> { cont ->
+                return@async suspendCoroutine <ByteArray?> { cont ->
                     // send a packet
                     GlobalScope.async {
                         val readValueJob = sendAwait(outgoingPacket, waitForResponse)
@@ -135,8 +120,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                         cont.resume(readValue)
                     }
                 }
-
-                return@async returnValue
             }
         }
 

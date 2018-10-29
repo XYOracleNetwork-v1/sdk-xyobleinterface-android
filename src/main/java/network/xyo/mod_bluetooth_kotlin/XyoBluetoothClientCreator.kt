@@ -28,6 +28,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
     override fun start(procedureCatalogueInterface: XyoNetworkProcedureCatalogueInterface) {
         logInfo("XyoBluetoothClientCreator started.")
         canCreate = true
+        gettingDevice = false
 
         val scannerCallback = object : XYFilteredSmartScan.Listener() {
             override fun detected(device: XYBluetoothDevice) {
@@ -73,11 +74,6 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
                 logInfo("Created pipe : ${device.address}")
                 connectionDevice.pipe = pipe
                 connectionDevice.onCreate(pipe)
-
-                GlobalScope.async {
-                    delay(CONNECTION_DELAY)
-                    gettingDevice = false
-                }
                 return@async pipe
             }
 
@@ -89,10 +85,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
             return@async null
         }
 
-        GlobalScope.async {
-            delay(CONNECTION_DELAY)
-            gettingDevice = false
-        }
+        gettingDevice = false
         return@async null
     }
 

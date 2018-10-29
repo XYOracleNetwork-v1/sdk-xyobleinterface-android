@@ -86,19 +86,6 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                             waitingOnCount--
                             doneConnections.add(connection)
 
-                            /**
-                             * When the wait count equals the number of connections we will resolve.
-                             */
-                            var highest: XyoBluetoothConnection? = null
-
-                            /**
-                             * Find the connection with the highest hash value.
-                             */
-                            for (doneConnection in doneConnections) {
-                                doneConnection.removeListener(connection.toString())
-                                highest = doneConnection
-                            }
-
 
                             /**
                              * Shut everything down.
@@ -112,16 +99,14 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                             serverFinder.removeListener(serverKey)
 
 
-                            val createdPipe = highest?.pipe
-
-                            if (createdPipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
-                                connectionRssi = createdPipe.rssi
+                            if (pipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
+                                connectionRssi = pipe.rssi
                             }
 
                             /**
                              * Resume the find call.
                              */
-                            cont.resume(highest?.pipe!!)
+                            cont.resume(pipe)
                         }
                     })
                 }

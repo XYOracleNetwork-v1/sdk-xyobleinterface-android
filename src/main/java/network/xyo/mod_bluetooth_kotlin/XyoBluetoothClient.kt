@@ -57,6 +57,8 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
         // if there is an error break
         if (writeError.error != null) {
             logInfo("Error writing catalogue to server. ${writeError.error}")
+            disconnect().await()
+            close().await()
             return@async null
         }
 
@@ -74,6 +76,8 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
             logInfo("Read the server's response (good).")
             return@async createPipeFromResponse(incomingPacket)
         } else {
+            disconnect().await()
+            close().await()
             logInfo("Error reading the server's response.")
             return@async null
         }
