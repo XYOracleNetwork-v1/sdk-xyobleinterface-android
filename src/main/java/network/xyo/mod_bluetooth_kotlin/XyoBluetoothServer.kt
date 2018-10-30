@@ -4,10 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.experimental.*
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.gatt.server.XYBluetoothReadCharacteristic
 import network.xyo.ble.gatt.server.XYBluetoothService
@@ -17,8 +14,7 @@ import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import java.nio.ByteBuffer
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
+import kotlin.coroutines.experimental.suspendCoroutine
 
 /**
  * A BLE server that can create XYO Network pipes.
