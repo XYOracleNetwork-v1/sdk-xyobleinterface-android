@@ -2,10 +2,10 @@ package network.xyo.mod_bluetooth_kotlin
 
 import android.bluetooth.le.AdvertiseSettings
 import android.os.ParcelUuid
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.cancel
-import kotlinx.coroutines.experimental.cancelChildren
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.cancelChildren
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYFilteredSmartScanModern
@@ -14,7 +14,8 @@ import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.network.XyoNetworkProviderInterface
 import java.util.*
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 /**
  * An implementation of the XyoNetworkProviderInterface and the XYO Network BLE Protocol
@@ -90,7 +91,6 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                             /**
                              * Resume the find call.
                              */
-                            println("RESUMED")
                             cont.resume(pipe)
                             coroutineContext.cancelChildren()
                             coroutineContext.cancel()

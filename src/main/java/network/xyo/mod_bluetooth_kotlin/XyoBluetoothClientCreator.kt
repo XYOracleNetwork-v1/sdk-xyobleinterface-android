@@ -1,9 +1,9 @@
 package network.xyo.mod_bluetooth_kotlin
 
-import kotlinx.coroutines.experimental.Deferred
-import kotlinx.coroutines.experimental.GlobalScope
-import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.delay
+import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.delay
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.scanner.XYFilteredSmartScan
 import network.xyo.ble.scanner.XYFilteredSmartScanModern
@@ -53,7 +53,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
                 return@async newPipe
             }
 
-            delay(CONNECTION_DELAY)
+            delay(CONNECTION_DELAY.toLong())
         }
 
         return@async null

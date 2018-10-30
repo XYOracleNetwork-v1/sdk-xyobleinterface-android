@@ -5,8 +5,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothManager
 import android.content.Context
 import android.os.ParcelUuid
-import android.util.Log
-import kotlinx.coroutines.experimental.*
+import kotlinx.coroutines.*
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.gatt.XYBluetoothError
@@ -20,7 +19,8 @@ import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
-import kotlin.coroutines.experimental.suspendCoroutine
+import kotlin.coroutines.resume
+import kotlin.coroutines.suspendCoroutine
 
 
 /**
@@ -144,7 +144,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
                                 if (waitForResponse) {
                                     logInfo("Going to read entire server response packet.")
 
-                                    delay(WAIT_FOR_RESPONSE_DELAY)
+                                    delay(WAIT_FOR_RESPONSE_DELAY.toLong())
                                     valueIn = readIncommoding()
                                 }
 
