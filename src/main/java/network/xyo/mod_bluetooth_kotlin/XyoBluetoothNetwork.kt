@@ -4,8 +4,6 @@ import android.bluetooth.le.AdvertiseSettings
 import android.os.ParcelUuid
 import kotlinx.coroutines.experimental.GlobalScope
 import kotlinx.coroutines.experimental.async
-import kotlinx.coroutines.experimental.cancel
-import kotlinx.coroutines.experimental.cancelChildren
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYFilteredSmartScanModern
@@ -48,6 +46,16 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
             val clientKey = "client$this"
 
             /**
+             * How many connections are waiting to be resolved.
+             */
+            var waitingOnCount = 0
+
+            /**
+             * How many connections are finished.
+             */
+            val doneConnections = ArrayList<XyoBluetoothConnection>()
+
+            /**
              * The standard listener to add to connection creators.
              */
             val listener = object : XyoBluetoothPipeCreatorListener {
@@ -56,6 +64,8 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                     connection.addListener(key, object : XyoBluetoothConnectionListener {
 
                         override fun onConnectionRequest() {
+                            waitingOnCount++
+
                             if (STRICT_TRY) {
                                 serverFinder.stop()
                                 clientFinder.stop()
@@ -63,6 +73,9 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                         }
 
                         override fun onConnectionFail() {
+                            waitingOnCount--
+                            connection.pipe?.close()
+
                             if (STRICT_TRY) {
                                 serverFinder.start(procedureCatalogue)
                                 clientFinder.start(procedureCatalogue)
@@ -70,6 +83,9 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                         }
 
                         override fun onCreated(pipe: XyoNetworkPipe) {
+                            waitingOnCount--
+                            doneConnections.add(connection)
+
 
                             /**
                              * Shut everything down.
@@ -90,12 +106,7 @@ class XyoBluetoothNetwork(bleServer: XYBluetoothGattServer, private val advertis
                             /**
                              * Resume the find call.
                              */
-                            println("RESUMED")
                             cont.resume(pipe)
-                            coroutineContext.cancelChildren()
-                            coroutineContext.cancel()
-                            cont.context.cancel()
-                            cont.context.cancelChildren()
                         }
                     })
                 }
