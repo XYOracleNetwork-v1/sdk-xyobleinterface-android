@@ -14,6 +14,7 @@ import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.network.XyoNetworkProviderInterface
+import java.util.*
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -25,6 +26,7 @@ import kotlin.coroutines.suspendCoroutine
  * @param advertiser The BLE advertiser to use when advertising the BLE XYO Service.
  */
 class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val advertiser: XYBluetoothAdvertiser, scanner: XYFilteredSmartScanModern, val errorListener : XyoBluetoothNetworkListener?) : XyoNetworkProviderInterface, XYBase() {
+    private var canCreate = false
     val clientFinder = XyoBluetoothClientCreator(scanner)
     val serverFinder = XyoBluetoothServer(bleServer)
     var connectionRssi : Int? = null
@@ -36,18 +38,30 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         clientFinder.stop()
         serverFinder.stop()
         stopAdvertiser()
+        canCreate = false
+    }
+
+    /**
+     * The implementation to resume all network services.
+     */
+    fun resume() {
+        canCreate = true
     }
 
     /**
      * The implementation to find a peer given a procedureCatalogue.
      */
     override fun find(procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.async {
+        canCreate = true
         connectionRssi = null
         var resumed = false
 
-        return@async suspendCoroutine<XyoNetworkPipe> { cont ->
-            val serverKey = "server$this"
-            val clientKey = "client$this"
+        val serverKey = "server$this"
+        val clientKey = "client$this"
+
+        val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
+            var isTrying = false
+            var found = false
 
             /**
              * The standard listener to add to connection creators.
@@ -57,38 +71,16 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
                     val key = connection.toString()
                     connection.addListener(key, object : XyoBluetoothConnectionListener {
                         override fun onConnectionRequest() {
-                            // stopAdvertiser()
+                            isTrying = true
                         }
 
                         override fun onConnectionFail() {
-                            serverFinder.start(procedureCatalogue)
-                            clientFinder.start(procedureCatalogue)
-                            // startAdvertiser()
+                            isTrying = false
                         }
 
                         override fun onCreated(pipe: XyoNetworkPipe) {
-
-                            /**
-                             * Shut everything down.
-                             */
-                            serverFinder.stop()
-                            clientFinder.stop()
-
-                            stopAdvertiser()
-
-                            clientFinder.removeListener(clientKey)
-                            serverFinder.removeListener(serverKey)
-
-
-                            if (pipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
-                                connectionRssi = pipe.rssi
-                            }
-
-                            /**
-                             * Resume the find call.
-                             */
-
                             if (!resumed) {
+                                found = true
                                 resumed = true
                                 cont.resume(pipe)
                             }
@@ -100,16 +92,62 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
             serverFinder.addListener(serverKey, listener)
             clientFinder.addListener(clientKey, listener)
 
-            serverFinder.start(procedureCatalogue)
-            clientFinder.start(procedureCatalogue)
-
             GlobalScope.launch {
-                val error = startAdvertiser().await()
-                if (error != null) {
-                    errorListener?.onError(error)
+                var onServer = Random().nextBoolean()
+
+                while (!found && !resumed) {
+                    if (canCreate) {
+                        if (onServer) {
+                            logInfo("Starting XYO BLE Server.")
+                            serverFinder.start(procedureCatalogue)
+                            startAdvertiser().await()
+                            delay((Math.random()* SWITCH_MAX).toLong())
+
+                            while (isTrying) {
+                                delay(TRY_WAIT_RESOLUTION.toLong())
+                            }
+
+                            logInfo("Stopping XYO BLE Server.")
+                            stopAdvertiser()
+                            serverFinder.stop()
+                            onServer = false
+                        } else {
+                            logInfo("Starting XYO BLE Client.")
+                            clientFinder.start(procedureCatalogue)
+                            delay((Math.random()*SWITCH_MAX).toLong())
+
+                            while (isTrying) {
+                                delay(TRY_WAIT_RESOLUTION.toLong())
+                            }
+
+                            logInfo("Stopping XYO BLE Client.")
+                            clientFinder.stop()
+                            onServer = true
+                        }
+                    } else {
+                        delay(TRY_WAIT_RESOLUTION.toLong())
+                    }
                 }
             }
         }
+
+        /**
+         * Shut everything down.
+         */
+        serverFinder.stop()
+        clientFinder.stop()
+
+        stopAdvertiser()
+
+        clientFinder.removeListener(clientKey)
+        serverFinder.removeListener(serverKey)
+
+
+        if (pipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
+            connectionRssi = pipe.rssi
+        }
+
+        return@async pipe
     }
 
     /**
@@ -147,5 +185,17 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
 
     interface XyoBluetoothNetworkListener {
         fun onError (error : XYBluetoothError)
+    }
+
+    companion object {
+        /**
+         * The max time to allow on either a client or server in milliseconds.
+         */
+        const val SWITCH_MAX = 30_000
+
+        /**
+         * How long wait in between checks of the client or server is still trying.
+         */
+        const val TRY_WAIT_RESOLUTION = 5_000
     }
 }
