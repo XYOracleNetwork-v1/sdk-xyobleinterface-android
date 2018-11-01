@@ -1,6 +1,15 @@
+[logo]: https://www.xy.company/img/home/logo_xy.png
+
+![logo]
+
 # mod-bluetooth-android
 
-[![](https://jitpack.io/v/XYOracleNetwork/mod-bluetooth-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-bluetooth-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev) [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android)
+[![](https://jitpack.io/v/XYOracleNetwork/mod-bluetooth-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-bluetooth-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev)
+
+| Branches        | Status           |
+| ------------- |:-------------:|
+| Master      | [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android) |
+| Develop      | [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android/tree/develop.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android/tree/develop)      |
 
 A basic network module that complies to the XYO Network Provider Interface.
 
