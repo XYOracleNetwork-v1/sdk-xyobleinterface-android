@@ -1,4 +1,4 @@
-package network.xyo.mod_bluetooth_kotlin
+package network.xyo.modbluetoothkotlin.packet
 
 import network.xyo.sdkcorekotlin.data.XyoByteArrayReader
 import network.xyo.sdkcorekotlin.data.XyoByteArraySetter

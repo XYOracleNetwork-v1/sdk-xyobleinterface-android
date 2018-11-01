@@ -1,4 +1,4 @@
-package network.xyo.mod_bluetooth_kotlin
+package network.xyo.modbluetoothkotlin
 
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import java.util.HashMap

@@ -1,4 +1,4 @@
-package network.xyo.mod_bluetooth_kotlin
+package network.xyo.modbluetoothkotlin
 
 /**
  * The Listener for a XyoBluetoothPipeCreator. This is used to know when a connection has been
