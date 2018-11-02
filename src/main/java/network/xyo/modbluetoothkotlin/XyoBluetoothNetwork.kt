@@ -63,6 +63,40 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
             var isTrying = false
             var found = false
 
+            val job = GlobalScope.launch {
+                var onServer = Random().nextBoolean()
+
+                while (!found && !resumed) {
+                    if (canCreate) {
+                        if (onServer) {
+                            logInfo("Starting XYO BLE Server.")
+                            serverFinder.start(procedureCatalogue)
+                            advertiser.startAdvertising()
+
+                            delay((Math.random()*SWITCH_MAX).toLong())
+
+                            logInfo("Stopping XYO BLE Server.")
+                            stopAdvertiser()
+                            serverFinder.stop()
+                            onServer = false
+                        } else {
+                            logInfo("Starting XYO BLE Client.")
+                            clientFinder.start(procedureCatalogue)
+
+                            delay((Math.random()*SWITCH_MAX).toLong())
+
+
+                            logInfo("Stopping XYO BLE Client.")
+                            clientFinder.stop()
+                            onServer = true
+                        }
+                    } else {
+                        println("DO NOT BE HERE")
+                        delay(TRY_WAIT_RESOLUTION.toLong())
+                    }
+                }
+            }
+
             /**
              * The standard listener to add to connection creators.
              */
@@ -82,6 +116,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
                             if (!resumed) {
                                 found = true
                                 resumed = true
+                                job.cancel()
                                 cont.resume(pipe)
                             }
                         }
@@ -91,44 +126,6 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
 
             serverFinder.addListener(serverKey, listener)
             clientFinder.addListener(clientKey, listener)
-
-            GlobalScope.launch {
-                var onServer = Random().nextBoolean()
-
-                while (!found && !resumed) {
-                    if (canCreate) {
-                        if (onServer) {
-                            logInfo("Starting XYO BLE Server.")
-                            serverFinder.start(procedureCatalogue)
-                            startAdvertiser().await()
-                            delay((Math.random()* SWITCH_MAX).toLong())
-
-                            while (isTrying) {
-                                delay(TRY_WAIT_RESOLUTION.toLong())
-                            }
-
-                            logInfo("Stopping XYO BLE Server.")
-                            stopAdvertiser()
-                            serverFinder.stop()
-                            onServer = false
-                        } else {
-                            logInfo("Starting XYO BLE Client.")
-                            clientFinder.start(procedureCatalogue)
-                            delay((Math.random()*SWITCH_MAX).toLong())
-
-                            while (isTrying) {
-                                delay(TRY_WAIT_RESOLUTION.toLong())
-                            }
-
-                            logInfo("Stopping XYO BLE Client.")
-                            clientFinder.stop()
-                            onServer = true
-                        }
-                    } else {
-                        delay(TRY_WAIT_RESOLUTION.toLong())
-                    }
-                }
-            }
         }
 
         /**
@@ -153,7 +150,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
     /**
      * Start a advertisement cycle
      */
-    private fun startAdvertiser() = GlobalScope.async {
+    private fun startAdvertiserFirst() = GlobalScope.async {
         val conResult = advertiser.changeContactable(true).await()
         if (conResult.error != null) return@async conResult.error
 
@@ -163,7 +160,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         val levResult = advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH).await()
         if (levResult.error != null) return@async levResult.error
 
-        return@async  advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE)).await().error
+        return@async advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE)).await().error
     }
 
     /**
@@ -180,6 +177,8 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
             if (error != null) {
                 errorListener?.onError(error)
             }
+
+            startAdvertiserFirst().await()
         }
     }
 

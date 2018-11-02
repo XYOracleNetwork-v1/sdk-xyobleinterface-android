@@ -25,8 +25,8 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
     override fun stop() {
         super.stop()
         scanner.removeListener(scannerKey)
-        logInfo("XyoBluetoothClientCreator stopped.")
         finderJob?.cancel()
+        logInfo("XyoBluetoothClientCreator stopped.")
     }
 
     override fun start(procedureCatalogueInterface: XyoNetworkProcedureCatalogueInterface) {
@@ -86,12 +86,12 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
 
         if (pipe != null) {
             logInfo("Created pipe : ${device.address}")
-            gettingDevice = false
+            // gettingDevice = false
             return@async pipe
         }
 
         logInfo("Could not create pipe : ${device.address}")
-
+        clients.remove(device.hashCode())
         logInfo("Device is not XyoBluetoothClient : ${device.address}")
         gettingDevice = false
         return@async null
@@ -102,18 +102,8 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
             super.entered(device)
 
             if (device is XyoBluetoothClient) {
-                if (!clients.containsKey(device.hashCode())) {
+                if (!clients.containsKey(device.hashCode()) && canCreate) {
                     clients[device.hashCode()] = device
-
-                    device.addListener(device.toString(), object : XYBluetoothDevice.Listener() {
-                        override fun connectionStateChanged(device: XYBluetoothDevice, newState: Int) {
-                            super.connectionStateChanged(device, newState)
-
-                            when (newState) {
-                                BluetoothGatt.STATE_DISCONNECTED -> clients.remove(device.hashCode())
-                            }
-                        }
-                    })
                 }
             }
         }
