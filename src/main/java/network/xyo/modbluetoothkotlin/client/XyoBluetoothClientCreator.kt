@@ -18,13 +18,12 @@ import java.util.concurrent.ConcurrentHashMap
  */
 class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) : XyoPipeCreatorBase() {
     private val clients = ConcurrentHashMap<Int, XyoBluetoothClient>()
-    private val scannerKey = "scanner$this"
     private var gettingDevice = false
     private var finderJob : Job? = null
+    private var lastDevice : Int? = null
 
     override fun stop() {
         super.stop()
-        scanner.removeListener(scannerKey)
         finderJob?.cancel()
         logInfo("XyoBluetoothClientCreator stopped.")
     }
@@ -34,17 +33,12 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
         canCreate = true
         gettingDevice = false
 
-        val scannerCallback = object : XYFilteredSmartScan.Listener() {
-            override fun detected(device: XYBluetoothDevice) {
-                super.detected(device)
-
-                if (!gettingDevice && device is XyoBluetoothClient) {
-                    finderJob = getNextDevice(procedureCatalogueInterface)
-                }
+        GlobalScope.launch {
+            while (canCreate) {
+                finderJob = getNextDevice(procedureCatalogueInterface)
+                delay(2_000)
             }
         }
-
-        scanner.addListener(scannerKey, scannerCallback)
     }
 
     private fun getNextDevice (procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.launch {
@@ -61,6 +55,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
                 if (pipe != null) {
                     connectionDevice.pipe = pipe
                     connectionDevice.onCreate(pipe)
+                    lastDevice = device.hashCode()
                     return@launch
                 }
                 connectionDevice.onFail()
@@ -72,7 +67,12 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
         val randomClients = clients.values.shuffled()
 
         if (randomClients.isNotEmpty()) {
-            return randomClients.first()
+            val randomClient = randomClients.first()
+
+            if (randomClient.hashCode() == lastDevice && randomClients.size > 1) {
+                return getRandomDevice()
+            }
+            return randomClient
         }
 
         return null

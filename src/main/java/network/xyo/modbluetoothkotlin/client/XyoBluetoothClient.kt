@@ -317,15 +317,17 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
             // get the device address to make sure you don't connect to yourself
             val bluetoothManager = context.applicationContext?.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
             val bluetoothAdapter = bluetoothManager?.adapter
-
             val isAXyoDevice = scanResult.scanRecord?.serviceUuids?.contains(ParcelUuid(XyoUuids.XYO_SERVICE))
 
             if (device != null && isAXyoDevice == true && bluetoothAdapter?.address != device.address) {
-                val hash = device.address.hashCode()
-                val createdDevice = XyoBluetoothClient(context, device, hash)
+                val hash = scanResult.scanRecord?.getManufacturerSpecificData(13)?.contentHashCode() ?: device.address.hashCode()
 
-                foundDevices[hash] = createdDevice
-                globalDevices[hash] = createdDevice
+                if (!foundDevices.containsKey(hash) && !globalDevices.contains(hash)) {
+                    val createdDevice = XyoBluetoothClient(context, device, hash)
+
+                    foundDevices[hash] = createdDevice
+                    globalDevices[hash] = createdDevice
+                }
             }
         }
     }

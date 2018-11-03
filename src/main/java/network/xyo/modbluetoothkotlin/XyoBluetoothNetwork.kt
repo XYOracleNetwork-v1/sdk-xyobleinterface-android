@@ -27,6 +27,8 @@ import kotlin.coroutines.suspendCoroutine
  */
 class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val advertiser: XYBluetoothAdvertiser, scanner: XYFilteredSmartScanModern, val errorListener : XyoBluetoothNetworkListener?) : XyoNetworkProviderInterface, XYBase() {
     private var canCreate = false
+    private val id = getId()
+
     val clientFinder = XyoBluetoothClientCreator(scanner)
     val serverFinder = XyoBluetoothServer(bleServer)
     var connectionRssi : Int? = null
@@ -48,6 +50,12 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         canCreate = true
     }
 
+    private fun getId () : ByteArray {
+        val id = ByteArray(2)
+        Random().nextBytes(id)
+        return id
+    }
+
     /**
      * The implementation to find a peer given a procedureCatalogue.
      */
@@ -58,6 +66,8 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
 
         val serverKey = "server$this"
         val clientKey = "client$this"
+
+        serverFinder.start(procedureCatalogue)
 
         val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
             var isTrying = false
@@ -70,20 +80,18 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
                     if (canCreate) {
                         if (onServer) {
                             logInfo("Starting XYO BLE Server.")
-                            serverFinder.start(procedureCatalogue)
                             advertiser.startAdvertising()
 
-                            delay((Math.random()*SWITCH_MAX).toLong())
+                            delay((Math.random()*SWITCH_MAX).toLong() + 5_000)
 
                             logInfo("Stopping XYO BLE Server.")
                             stopAdvertiser()
-                            serverFinder.stop()
                             onServer = false
                         } else {
                             logInfo("Starting XYO BLE Client.")
                             clientFinder.start(procedureCatalogue)
 
-                            delay((Math.random()*SWITCH_MAX).toLong())
+                            delay((Math.random()*SWITCH_MAX).toLong() + 5_000)
 
 
                             logInfo("Stopping XYO BLE Client.")
@@ -151,6 +159,12 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
      * Start a advertisement cycle
      */
     private fun startAdvertiserFirst() = GlobalScope.async {
+        val manData = advertiser.changeManufacturerData(id).await()
+        if (manData.error != null) return@async manData.error
+
+        val manId = advertiser.changeManufacturerId(13).await()
+        if (manId.error != null) return@async manId.error
+
         val conResult = advertiser.changeContactable(true).await()
         if (conResult.error != null) return@async conResult.error
 
@@ -190,7 +204,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         /**
          * The max time to allow on either a client or server in milliseconds.
          */
-        const val SWITCH_MAX = 30_000
+        const val SWITCH_MAX = 20_000
 
         /**
          * How long wait in between checks of the client or server is still trying.
