@@ -4,10 +4,7 @@ import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattServerCallback
 import android.bluetooth.BluetoothGattService
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
-import kotlinx.coroutines.cancel
+import kotlinx.coroutines.*
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.gatt.server.XYBluetoothReadCharacteristic
 import network.xyo.ble.gatt.server.XYBluetoothService
@@ -106,14 +103,14 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                 val outgoingPacket = XyoBluetoothOutgoingPacket(20, data)
                 val disconnectKey = "${this}disconnect"
 
-                return@async suspendCoroutine <ByteArray?> { cont ->
+                return@async suspendCancellableCoroutine <ByteArray?> { cont ->
                     // send a packet
                     GlobalScope.async {
                         val readValueJob = sendAwait(outgoingPacket, waitForResponse)
 
                         val listener = object : BluetoothGattServerCallback() {
                             override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
-                                if (newState == BluetoothGatt.STATE_DISCONNECTED && device?.address == bluetoothDevice.address) {
+                                if (isActive && newState == BluetoothGatt.STATE_DISCONNECTED && device?.address == bluetoothDevice.address) {
                                     bluetoothServer.removeListener(disconnectKey)
                                     cont.resume(null)
                                     coroutineContext.cancel()
@@ -144,14 +141,14 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         }
     }
 
-    suspend fun sendPacket (outgoingPacket : XyoBluetoothOutgoingPacket, characteristic: XYBluetoothReadCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCoroutine<Any?> { cont ->
+    suspend fun sendPacket (outgoingPacket : XyoBluetoothOutgoingPacket, characteristic: XYBluetoothReadCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<Any?> { cont ->
         val key = "sendPacket$this"
         characteristic.addResponder(key, object : XYBluetoothReadCharacteristic.XYBluetoothReadCharacteristicResponder {
             override fun onReadRequest(device: BluetoothDevice?): ByteArray? {
                 if (bluetoothDevice.address == device?.address) {
                     val sendValue = outgoingPacket.getNext()
 
-                    if (!outgoingPacket.canSendNext) {
+                    if (!outgoingPacket.canSendNext && cont.isActive) {
                         characteristic.removeResponder(key)
                         cont.resume(null)
                     }
@@ -163,7 +160,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         })
     }
 
-    suspend fun readPacket (writeCharacteristic: XYBluetoothWriteCharacteristic, bluetoothDevice: BluetoothDevice) : ByteArray? = suspendCoroutine<ByteArray?> { cont ->
+    suspend fun readPacket (writeCharacteristic: XYBluetoothWriteCharacteristic, bluetoothDevice: BluetoothDevice) : ByteArray? = suspendCancellableCoroutine<ByteArray?> { cont ->
         var incomingPacket : XyoBluetoothIncomingPacket? = null
         val key = "readPacket$this"
 
@@ -175,7 +172,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                             incomingPacket = XyoBluetoothIncomingPacket(writeRequestValue)
                         } else {
                             val doneValue = incomingPacket?.addPacket(writeRequestValue)
-                            if (doneValue != null) {
+                            if (doneValue != null && cont.isActive) {
                                 writeCharacteristic.removeResponder(key)
                                 cont.resume(doneValue)
                             }
