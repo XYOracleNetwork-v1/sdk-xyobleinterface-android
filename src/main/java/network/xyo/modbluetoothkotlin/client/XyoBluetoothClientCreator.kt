@@ -36,7 +36,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
         GlobalScope.launch {
             while (canCreate) {
                 finderJob = getNextDevice(procedureCatalogueInterface)
-                delay(2_000)
+                delay(SCAN_FREQUENCY.toLong())
             }
         }
     }
@@ -98,7 +98,7 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
     }
 
     private val scannerCallback = object : XYFilteredSmartScan.Listener() {
-        override fun entered(device: XYBluetoothDevice) {
+        override fun detected(device: XYBluetoothDevice) {
             super.entered(device)
 
             if (device is XyoBluetoothClient) {
@@ -119,5 +119,12 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
     init {
         XyoBluetoothClient.enable(true)
         scanner.addListener(this.toString(), scannerCallback)
+    }
+
+    companion object {
+        /**
+         * How often to look aground for nearby devices
+         */
+        const val SCAN_FREQUENCY = 500
     }
 }
