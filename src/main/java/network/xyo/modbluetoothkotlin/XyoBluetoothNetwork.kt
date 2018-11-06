@@ -67,11 +67,12 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         val serverKey = "server$this"
         val clientKey = "client$this"
 
-        serverFinder.start(procedureCatalogue)
 
         val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
             var isTrying = false
             var found = false
+
+            serverFinder.start(procedureCatalogue)
 
             val job = GlobalScope.launch {
                 var onServer = Random().nextBoolean()
@@ -99,7 +100,6 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
                             onServer = true
                         }
                     } else {
-                        println("DO NOT BE HERE")
                         delay(TRY_WAIT_RESOLUTION.toLong())
                     }
                 }
@@ -159,22 +159,22 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
      * Start a advertisement cycle
      */
     private fun startAdvertiserFirst() = GlobalScope.async {
-        val manData = advertiser.changeManufacturerData(id).await()
+        val manData = advertiser.changeManufacturerData(id, false).await()
         if (manData.error != null) return@async manData.error
 
-        val manId = advertiser.changeManufacturerId(13).await()
+        val manId = advertiser.changeManufacturerId(13, false).await()
         if (manId.error != null) return@async manId.error
 
-        val conResult = advertiser.changeContactable(true).await()
+        val conResult = advertiser.changeContactable(true, false).await()
         if (conResult.error != null) return@async conResult.error
 
-        val modResult = advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY).await()
+        val modResult = advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY, false).await()
         if (modResult.error != null) return@async modResult.error
 
-        val levResult = advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH).await()
+        val levResult = advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH, false).await()
         if (levResult.error != null) return@async levResult.error
 
-        return@async advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE)).await().error
+        return@async advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE), false).await().error
     }
 
     /**
