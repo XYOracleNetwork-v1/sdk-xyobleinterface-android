@@ -204,7 +204,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         /**
          * The max time to allow on either a client or server in milliseconds.
          */
-        const val SWITCH_MAX = 20_000
+        const val SWITCH_MAX = 40_000
 
         /**
          * How long wait in between checks of the client or server is still trying.

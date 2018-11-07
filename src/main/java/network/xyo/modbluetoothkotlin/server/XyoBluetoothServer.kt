@@ -110,7 +110,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
                         val listener = object : BluetoothGattServerCallback() {
                             override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
-                                if (isActive && newState == BluetoothGatt.STATE_DISCONNECTED && device?.address == bluetoothDevice.address) {
+                                if (cont.isActive && newState == BluetoothGatt.STATE_DISCONNECTED && device?.address == bluetoothDevice.address) {
                                     bluetoothServer.removeListener(disconnectKey)
                                     cont.resume(null)
                                     coroutineContext.cancel()
