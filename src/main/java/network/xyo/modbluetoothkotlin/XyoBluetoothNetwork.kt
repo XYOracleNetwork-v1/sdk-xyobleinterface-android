@@ -174,7 +174,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
         val levResult = advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH, false).await()
         if (levResult.error != null) return@async levResult.error
 
-        return@async advertiser.chnagePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE), false).await().error
+        return@async advertiser.changePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE), false).await().error
     }
 
     /**
