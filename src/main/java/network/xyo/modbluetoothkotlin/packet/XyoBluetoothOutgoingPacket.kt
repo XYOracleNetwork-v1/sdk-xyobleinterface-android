@@ -1,6 +1,6 @@
 package network.xyo.modbluetoothkotlin.packet
 
-import network.xyo.sdkcorekotlin.data.XyoUnsignedHelper
+import java.nio.ByteBuffer
 
 /**
  * A class to chunk bluetooth data when writing to a GATT.
@@ -10,7 +10,7 @@ import network.xyo.sdkcorekotlin.data.XyoUnsignedHelper
  */
 class XyoBluetoothOutgoingPacket (private val chunkSize : Int, private val bytes : ByteArray) {
     private var currentIndex = 0
-    private val encodedSize = XyoUnsignedHelper.createUnsignedInt(bytes.size + 4)
+    private val encodedSize = ByteBuffer.allocate(4).putInt(bytes.size + 4).array()
 
     /**
      * If there are more packets to send.

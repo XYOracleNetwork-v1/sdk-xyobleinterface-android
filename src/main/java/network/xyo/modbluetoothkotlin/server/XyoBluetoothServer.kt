@@ -15,12 +15,12 @@ import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
-import network.xyo.sdkcorekotlin.data.XyoUnsignedHelper
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.experimental.and
 
 /**
  * A BLE server that can create XYO Network pipes.
@@ -52,7 +52,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                     onCreateConnection(connectionDevice)
                     connectionDevice.onTry()
 
-                    val sizeOfCatalogue = XyoUnsignedHelper.readUnsignedByte(byteArrayOf(writeRequestValue[0]))
+                    val sizeOfCatalogue = writeRequestValue[0].toInt() and 0xFFFF
                     val catalogue = writeRequestValue.copyOfRange(1, sizeOfCatalogue + 1)
 
                     // check if the request can do the catalogue
@@ -100,6 +100,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                     return@async null
                 }
 
+
                 val outgoingPacket = XyoBluetoothOutgoingPacket(20, data)
                 val disconnectKey = "${this}disconnect"
 
@@ -130,6 +131,12 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         }
 
         private fun sendAwait (outgoingPacket: XyoBluetoothOutgoingPacket, waitForResponse: Boolean) = GlobalScope.async {
+            // make sure to set a value before notifying
+            bluetoothReadCharacteristic.value = byteArrayOf(0x00)
+
+            // notify the characteristic has changed
+            bluetoothServer.sendNotification(bluetoothReadCharacteristic, false, bluetoothDevice).await()
+
             sendPacket(outgoingPacket, readCharacteristic, bluetoothDevice)
 
             if (waitForResponse) {
@@ -143,6 +150,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
     suspend fun sendPacket (outgoingPacket : XyoBluetoothOutgoingPacket, characteristic: XYBluetoothReadCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<Any?> { cont ->
         val key = "sendPacket$this"
+
         characteristic.addResponder(key, object : XYBluetoothReadCharacteristic.XYBluetoothReadCharacteristicResponder {
             override fun onReadRequest(device: BluetoothDevice?): ByteArray? {
                 if (bluetoothDevice.address == device?.address) {
