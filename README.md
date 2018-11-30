@@ -32,3 +32,6 @@ dependencies {
 
 ## License
 This project is licensed under the MIT License - see the LICENSE.md file for details
+
+<br><hr><br>
+<p align="center">Made with  ❤️  by [<b>XY - The Persistent Company</b>] (https://xy.company)</p>
