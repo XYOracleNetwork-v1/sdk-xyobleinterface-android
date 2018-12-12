@@ -9,18 +9,14 @@ import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.gatt.server.XYBluetoothReadCharacteristic
 import network.xyo.ble.gatt.server.XYBluetoothService
 import network.xyo.ble.gatt.server.XYBluetoothWriteCharacteristic
-import network.xyo.mod_bluetooth_kotlin.*
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
 import network.xyo.modbluetoothkotlin.XyoUuids
-import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
-import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
+import java.nio.ByteBuffer
 import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
-import kotlin.experimental.and
 
 /**
  * A BLE server that can create XYO Network pipes.
@@ -95,19 +91,17 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
         override fun send(data: ByteArray,  waitForResponse : Boolean) : Deferred<ByteArray?> {
             return GlobalScope.async {
-                // check if the device is still connected
                 if (!bluetoothServer.isDeviceConnected(bluetoothDevice)) {
                     return@async null
                 }
 
 
-                val outgoingPacket = XyoBluetoothOutgoingPacket(20, data)
                 val disconnectKey = "${this}disconnect"
 
                 return@async suspendCancellableCoroutine <ByteArray?> { cont ->
                     // send a packet
                     GlobalScope.async {
-                        val readValueJob = sendAwait(outgoingPacket, waitForResponse)
+                        val readValueJob = sendAwait(data, waitForResponse)
 
                         val listener = object : BluetoothGattServerCallback() {
                             override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
@@ -130,7 +124,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
             }
         }
 
-        private fun sendAwait (outgoingPacket: XyoBluetoothOutgoingPacket, waitForResponse: Boolean) = GlobalScope.async {
+        private fun sendAwait (outgoingPacket: ByteArray, waitForResponse: Boolean) = GlobalScope.async {
             // make sure to set a value before notifying
             bluetoothReadCharacteristic.value = byteArrayOf(0x00)
 
@@ -148,20 +142,31 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         }
     }
 
-    suspend fun sendPacket (outgoingPacket : XyoBluetoothOutgoingPacket, characteristic: XYBluetoothReadCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<Any?> { cont ->
-        val key = "sendPacket$this"
+    suspend fun sendPacket (outgoingPacket : ByteArray, characteristic: XYBluetoothReadCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<Any?> { cont ->
+        val key = "sendPacket$this ${Math.random()}"
+        characteristic.value = outgoingPacket
 
         characteristic.addResponder(key, object : XYBluetoothReadCharacteristic.XYBluetoothReadCharacteristicResponder {
-            override fun onReadRequest(device: BluetoothDevice?): ByteArray? {
-                if (bluetoothDevice.address == device?.address) {
-                    val sendValue = outgoingPacket.getNext()
+            var lastTime = 0
 
-                    if (!outgoingPacket.canSendNext && cont.isActive) {
+            override fun onReadRequest(device: BluetoothDevice?, offset : Int): XYBluetoothGattServer.XYReadRequest? {
+                if (bluetoothDevice.address == device?.address) {
+                    val size = outgoingPacket.size - offset
+                    val response = ByteArray(size)
+
+                    for (i in offset until outgoingPacket.size) {
+                        response[i - offset] = outgoingPacket[i]
+                    }
+
+                    if ((offset - lastTime) + offset > outgoingPacket.size) {
                         characteristic.removeResponder(key)
                         cont.resume(null)
                     }
 
-                    return sendValue
+                    lastTime = offset
+
+                    return XYBluetoothGattServer.XYReadRequest(response, Math.min(offset, outgoingPacket.size))
+
                 }
                 return null
             }
@@ -169,27 +174,31 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
     }
 
     suspend fun readPacket (writeCharacteristic: XYBluetoothWriteCharacteristic, bluetoothDevice: BluetoothDevice) : ByteArray? = suspendCancellableCoroutine<ByteArray?> { cont ->
-        var incomingPacket : XyoBluetoothIncomingPacket? = null
-        val key = "readPacket$this"
+        val key = "readPacket$this ${Math.random()}"
 
         writeCharacteristic.addResponder(key, object : XYBluetoothWriteCharacteristic.XYBluetoothWriteCharacteristicResponder {
-            override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
-                if (bluetoothDevice.address == device?.address) {
-                    if (writeRequestValue != null) {
-                        if (incomingPacket == null) {
-                            incomingPacket = XyoBluetoothIncomingPacket(writeRequestValue)
-                        } else {
-                            val doneValue = incomingPacket?.addPacket(writeRequestValue)
-                            if (doneValue != null && cont.isActive) {
-                                writeCharacteristic.removeResponder(key)
-                                cont.resume(doneValue)
-                            }
+            var buffer : ByteBuffer? = null
+            var numberOfPackets  = 0
+            var receivedSize = 0
+            var totalSize = 0
 
-                        }
-                        return true
-                    }
+            override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
+                if (numberOfPackets == 0) {
+                    totalSize = ByteBuffer.wrap(writeRequestValue).int
+                    buffer = ByteBuffer.allocate(totalSize)
                 }
-                return null
+
+                receivedSize += writeRequestValue?.size ?: 0
+                numberOfPackets++
+
+                buffer?.put(writeRequestValue)
+
+                if (receivedSize == totalSize) {
+                    writeCharacteristic.removeResponder(key)
+                    cont.resume(buffer?.array()?.copyOfRange(4, totalSize))
+                }
+
+                return true
             }
         })
     }

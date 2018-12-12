@@ -11,8 +11,6 @@ import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.gatt.XYBluetoothError
 import network.xyo.ble.scanner.XYScanResult
-import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
-import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
@@ -76,7 +74,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
         // read the response from the server
         val incomingPacket = readIncommoding()
 
-        logInfo("Read the server's response.")
+        logInfo("Read the server's response. ${incomingPacket?.size}")
 
         // check if the packet was read successfully
         if (incomingPacket != null) {
@@ -123,7 +121,6 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
 
         override fun send(data: ByteArray, waitForResponse: Boolean): Deferred<ByteArray?> = GlobalScope.async {
             // the packet to send to the server
-            val outgoingPacket = XyoBluetoothOutgoingPacket(20, data)
             return@async suspendCoroutine<ByteArray?> { cont ->
                 GlobalScope.launch {
                     val status = connection {
@@ -152,7 +149,7 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
                             // send the data
                             logInfo("Sending entire packet to the server.")
 
-                            val packetError = sendPacket(outgoingPacket).await()
+                            val packetError = sendPacket(data).await()
 
                             logInfo("Sent entire packet to the server.")
 
@@ -168,10 +165,8 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
 
                                     // if not has been notified, wait for a notification
                                     if (!hasNotified) {
-                                        println("___HAS NOT BEEN NOTIFIED")
                                         removeGattListener(notifyListenerName)
                                         waitForNotification(XyoUuids.XYO_READ).await()
-                                        println("___RESUMED")
                                     }
 
                                     valueIn = readIncommoding()
@@ -235,99 +230,22 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
         }
     }
 
-    private fun sendPacket(outgoingPacket: XyoBluetoothOutgoingPacket): Deferred<XYBluetoothError?> = GlobalScope.async {
+    private fun sendPacket(outgoingPacket: ByteArray): Deferred<XYBluetoothError?> = GlobalScope.async {
         logInfo("Sending Entire Packet sendPacket.")
         // while the packet can still send
-        while (outgoingPacket.canSendNext) {
-            // write to the server
-            logInfo("Writing to the server.")
-            val error = findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, outgoingPacket.getNext()).await()
-
-            // if there was an error sending break and return the error
-            if (error.error != null) {
-                logInfo("Error writing to the server.")
-                return@async error.error
-            }
-            logInfo("Wrote to the server,.")
-        }
-
-        // if you are here then there was no error
-        logInfo("Sending entire packet to server (good).")
+        val buffer = ByteBuffer.allocate(outgoingPacket.size + 4)
+        buffer.putInt(outgoingPacket.size + 4)
+        buffer.put(outgoingPacket)
+        findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, buffer.array()).await()
         return@async null
     }
 
-    private suspend fun readIncommoding() = suspendCoroutine<ByteArray?> { cont ->
-        logInfo("Reading incoming packet readIncommoding.")
-        GlobalScope.launch {
-            // read the first packet
-            logInfo("Reading first packet from server.")
-            val firstReadPacket = findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_READ).await()
-
-            // check if there is an error
-            if (firstReadPacket.error == null) {
-
-                // make sure there is a value
-                val firstReadPacketValue = firstReadPacket.value
-                if (firstReadPacketValue != null) {
-
-                    logInfo("Read first packet from server.")
-
-                    // create the incoming packet
-                    val incomingPacket = XyoBluetoothIncomingPacket(firstReadPacketValue)
-
-                    // with the created packet, read through all of it
-                    val readValue = readEntirePacket(incomingPacket)
-
-                    cont.resume(readValue)
-                    return@launch
-                }
-            }
-
-            // if you are here, there was an error
-            logInfo("Error reading ${firstReadPacket.error}.")
-            cont.resume(null)
-            coroutineContext.cancel()
-        }
-
+    private suspend fun readIncommoding() : ByteArray? {
+        val value = findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_READ).await()
+        return value.value
     }
 
-    private suspend fun readEntirePacket(incomingPacket: XyoBluetoothIncomingPacket): ByteArray? {
-        logInfo("Going to read entire packet readEntirePacket.")
 
-        // while the incoming packet can still send
-        while (!incomingPacket.done) {
-            logInfo("Going to read sub packet.")
-            // read a packet
-            val packet = findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_READ).await()
-
-            // check the error
-            if (packet.error == null) {
-
-                // make sure there is a value
-                val packetValue = packet.value
-                if (packetValue != null) {
-
-                    logInfo("Read sub packet.")
-
-                    // add the packet
-                    val donePacket = incomingPacket.addPacket(packetValue)
-
-                    // check if completed and return
-                    if (donePacket != null) {
-
-                        logInfo("Done reading sub packet.")
-                        // if you are here the packet is done
-                        return donePacket
-                    }
-                }
-            } else {
-                break
-            }
-        }
-
-        // if you are here there was an error
-        return null
-    }
 
     companion object : XYCreator() {
         fun enable(enable: Boolean) {
