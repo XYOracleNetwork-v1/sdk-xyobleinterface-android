@@ -45,11 +45,11 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
         val device = getRandomDevice()
 
         if (device != null) {
-            val connectionDevice = XyoBluetoothConnection()
-            onCreateConnection(connectionDevice)
-            connectionDevice.onTry()
-
             if (!gettingDevice && canCreate) {
+                val connectionDevice = XyoBluetoothConnection()
+                onCreateConnection(connectionDevice)
+                connectionDevice.onTry()
+
                 val pipe = checkDevice(device, procedureCatalogue).await()
 
                 if (pipe != null) {

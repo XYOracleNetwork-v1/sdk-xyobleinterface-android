@@ -15,11 +15,4 @@ object XyoUuids {
      * The GATT characteristic to be written to. This will be in the XYO_SERVICE.
      */
     val XYO_WRITE = UUID.fromString("222e4d1d-981d-4ad9-9816-e75c7b4fbf42")!!
-
-    /**
-     * The GATT characteristic to be read from. This will be in the XYO_SERVICE.
-     */
-    val XYO_READ = UUID.fromString("333e4d1d-981d-4ad9-9816-e75c7b4fbf46")!!
-
-
 }

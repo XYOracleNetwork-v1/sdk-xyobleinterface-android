@@ -1,6 +1,7 @@
 package network.xyo.modbluetoothkotlin.server
 
 import android.bluetooth.*
+import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.gatt.server.XYBluetoothCharacteristic
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
@@ -29,14 +30,16 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
     }
 
     override fun start (procedureCatalogueInterface: XyoNetworkProcedureCatalogueInterface) {
+        Log.v("WIN", "START SERVER")
         logInfo("XyoBluetoothServer started.")
         canCreate = true
-        bluetoothReadCharacteristic.clearReadResponders()
         bluetoothWriteCharacteristic.clearWriteResponders()
 
         // add a responder to the characteristic to wait for a read request
+        Log.v("WIN", "ADDING RESPONDER")
         bluetoothWriteCharacteristic.addResponder(responderKey, object : XYBluetoothCharacteristic.XYBluetoothWriteCharacteristicResponder {
             override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
+                Log.v("WIN", "ON WRITE")
                 if (writeRequestValue != null && device != null) {
                     logInfo("XyoBluetoothServer onWriteRequest!")
                     // unpack the catalogue
@@ -50,11 +53,13 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
                     // check if the request can do the catalogue
                     if (procedureCatalogueInterface.canDo(catalogue)) {
-                        val pipe = XyoBluetoothServerPipe(device, bluetoothReadCharacteristic, bluetoothWriteCharacteristic, catalogue)
+                        Log.v("WIN", "CAN DO CREATING PIPE")
+                        val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, catalogue)
                         connectionDevice.pipe = pipe
                         connectionDevice.onCreate(pipe)
                         return true
                     }
+                    Log.v("WIN", "SERVER CAN NOT DO")
                     connectionDevice.onFail()
                 }
 
@@ -67,7 +72,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
      * This pipe will be creating after a negotiation has occurred.
      */
     inner class XyoBluetoothServerPipe(private val bluetoothDevice: BluetoothDevice,
-                                       private val readCharacteristic: XYBluetoothCharacteristic,
                                        private val writeCharacteristic: XYBluetoothCharacteristic,
                                        private val catalogue: ByteArray) : XyoNetworkPipe() {
 
@@ -83,10 +87,13 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         }
 
         override fun close(): Deferred<Any?> = GlobalScope.async {
+            Log.v("WIN", "SERVER CLOSE")
             bluetoothServer.disconnect(bluetoothDevice)
         }
 
         override fun send(data: ByteArray,  waitForResponse : Boolean) : Deferred<ByteArray?> {
+            Log.v("WIN", "SERVER SEND")
+
             return GlobalScope.async {
                 if (!bluetoothServer.isDeviceConnected(bluetoothDevice)) {
                     return@async null
@@ -97,12 +104,14 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
                 return@async suspendCancellableCoroutine <ByteArray?> { cont ->
                     // send a packet
-                    GlobalScope.async {
+                    GlobalScope.launch {
+
                         val readValueJob = sendAwait(data, waitForResponse)
 
                         val listener = object : BluetoothGattServerCallback() {
                             override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
                                 if (cont.isActive && newState == BluetoothGatt.STATE_DISCONNECTED && device?.address == bluetoothDevice.address) {
+                                    Log.v("WIN", "CONNECTION STATE CHANGE")
                                     bluetoothServer.removeListener(disconnectKey)
                                     cont.resume(null)
                                     coroutineContext.cancel()
@@ -113,6 +122,8 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                         }
 
                         bluetoothServer.addListener(disconnectKey, listener)
+
+                        Log.v("WIN", "AWAITING SEND")
                         val readValue = readValueJob.await()
                         bluetoothServer.removeListener(disconnectKey)
                         cont.resume(readValue)
@@ -123,16 +134,23 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
         private fun sendAwait (outgoingPacket: ByteArray, waitForResponse: Boolean) = GlobalScope.async {
             // make sure to set a value before notifying
-            bluetoothReadCharacteristic.value = byteArrayOf(0x00)
+            bluetoothWriteCharacteristic.value = byteArrayOf(0x00)
 
             // notify the characteristic has changed
-            bluetoothServer.sendNotification(bluetoothReadCharacteristic, false, bluetoothDevice).await()
+            Log.v("WIN", "SEND NOTIFACTION AWAIT ")
+            bluetoothServer.sendNotification(bluetoothWriteCharacteristic, false, bluetoothDevice).await()
+            Log.v("WIN", "SEND NOTIFACTION AWAIT DONE")
 
-            sendPacket(outgoingPacket, readCharacteristic, bluetoothDevice)
+            Log.v("WIN", "SEND PACKET SERVER")
+            sendPacket(outgoingPacket, writeCharacteristic, bluetoothDevice)
+            Log.v("WIN", "SEND PACKET SERVER DONE")
 
             if (waitForResponse) {
+                Log.v("WIN", "WAITING FOR RESPONSE")
                 // read packet
-                return@async readPacket(writeCharacteristic, bluetoothDevice)
+                val result = readPacket(writeCharacteristic, bluetoothDevice)
+                Log.v("WIN", "READ RESPONSE SERVER")
+                return@async result
             }
 
             return@async null
@@ -187,7 +205,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
     fun spinUpServer () = GlobalScope.async {
         bluetoothService.addCharacteristic(bluetoothWriteCharacteristic)
-        bluetoothService.addCharacteristic(bluetoothReadCharacteristic)
         bluetoothServer.startServer()
         return@async bluetoothServer.addService(bluetoothService).await()
     }
@@ -195,16 +212,10 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
     companion object {
         private val bluetoothWriteCharacteristic = XYBluetoothCharacteristic(
                 XyoUuids.XYO_WRITE,
-                BluetoothGattCharacteristic.PROPERTY_WRITE,
-                BluetoothGattCharacteristic.PERMISSION_WRITE
+                BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_READ,
+                BluetoothGattCharacteristic.PERMISSION_WRITE or  BluetoothGattCharacteristic.PROPERTY_READ
         )
 
-        private val bluetoothReadCharacteristic = XYBluetoothCharacteristic(
-                XyoUuids.XYO_READ,
-                BluetoothGattCharacteristic.PROPERTY_READ,
-                BluetoothGattCharacteristic.PROPERTY_READ
-
-        )
 
         private val bluetoothService = XYBluetoothService(
                 XyoUuids.XYO_SERVICE,
