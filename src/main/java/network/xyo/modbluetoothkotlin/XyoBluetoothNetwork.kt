@@ -75,18 +75,15 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
                 /**
                  * The standard listener to add to connection creators.
                  */
-                val clientListener = object : XyoBluetoothPipeCreatorListener {
+                val connectionCreationListener = object : XyoBluetoothPipeCreatorListener {
                     override fun onCreatedConnection(connection: XyoBluetoothConnection) {
                         val key = connection.toString()
                         connection.addListener(key, object : XyoBluetoothConnectionListener {
                             override fun onConnectionRequest() {
-                                serverFinder.stop()
                             }
 
                             override fun onConnectionFail() {
-                                serverFinder.start(procedureCatalogue)
                             }
-
 
                             override fun onCreated(pipe: XyoNetworkPipe) {
                                 if (!resumed) {
@@ -98,30 +95,8 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
                     }
                 }
 
-                val serverListener = object : XyoBluetoothPipeCreatorListener {
-                    override fun onCreatedConnection(connection: XyoBluetoothConnection) {
-                        val key = connection.toString()
-                        connection.addListener(key, object : XyoBluetoothConnectionListener {
-                            override fun onConnectionRequest() {
-                                // clientFinder.stop()
-                            }
-                            override fun onConnectionFail() {
-                                // clientFinder.start(procedureCatalogue)
-                            }
-
-
-                            override fun onCreated(pipe: XyoNetworkPipe) {
-                                if (!resumed) {
-                                    resumed = true
-                                    cont.resume(pipe)
-                                }
-                            }
-                        })
-                    }
-                }
-
-                serverFinder.addListener(serverKey, serverListener)
-                clientFinder.addListener(clientKey, clientListener)
+                serverFinder.addListener(serverKey, connectionCreationListener)
+                clientFinder.addListener(clientKey, connectionCreationListener)
                 Log.v("WIN", "STARTING ADVERSIZING")
                 advertiser.startAdvertising().await()
                 Log.v("WIN", "DID ADVERSIZING")
