@@ -72,19 +72,12 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
 
         val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
             GlobalScope.launch {
-                /**
-                 * The standard listener to add to connection creators.
-                 */
                 val connectionCreationListener = object : XyoBluetoothPipeCreatorListener {
                     override fun onCreatedConnection(connection: XyoBluetoothConnection) {
                         val key = connection.toString()
                         connection.addListener(key, object : XyoBluetoothConnectionListener {
-                            override fun onConnectionRequest() {
-                            }
-
-                            override fun onConnectionFail() {
-                            }
-
+                            override fun onConnectionRequest() {}
+                            override fun onConnectionFail() {}
                             override fun onCreated(pipe: XyoNetworkPipe) {
                                 if (!resumed) {
                                     resumed = true
@@ -105,19 +98,14 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
             }
         }
 
-        /**
-         * Shut everything down.
-         */
+
         Log.v("WIN", "FOUND PIPE STOPING ALL")
         serverFinder.stop()
         clientFinder.stop()
-
         Log.v("WIN", "STOP ADVERTIZER")
         stopAdvertiser()
-
         clientFinder.removeListener(clientKey)
         serverFinder.removeListener(serverKey)
-
 
         if (pipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
             connectionRssi = pipe.rssi

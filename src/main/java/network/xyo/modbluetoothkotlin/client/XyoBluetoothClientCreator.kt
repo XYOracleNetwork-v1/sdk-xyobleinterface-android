@@ -119,6 +119,12 @@ class XyoBluetoothClientCreator(private val scanner: XYFilteredSmartScanModern) 
     init {
         XyoBluetoothClient.enable(true)
         scanner.addListener(this.toString(), scannerCallback)
+
+        for ((_, device) in scanner.devices) {
+            if (device is XyoBluetoothClient) {
+                clients[device.hashCode()] = device
+            }
+        }
     }
 
     companion object {
