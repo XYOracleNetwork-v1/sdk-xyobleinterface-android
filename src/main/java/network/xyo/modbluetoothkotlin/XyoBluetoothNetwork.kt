@@ -2,6 +2,7 @@ package network.xyo.modbluetoothkotlin
 
 import android.bluetooth.le.AdvertiseSettings
 import android.os.ParcelUuid
+import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.gatt.XYBluetoothError
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
@@ -60,6 +61,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
      * The implementation to find a peer given a procedureCatalogue.
      */
     override fun find(procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.async {
+        Log.v("WIN", "FIND")
         canCreate = true
         connectionRssi = null
         var resumed = false
@@ -69,84 +71,36 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
 
 
         val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
-            var isTrying = false
-            var found = false
-
-            serverFinder.start(procedureCatalogue)
-
-            val job = GlobalScope.launch {
-                var onServer = Random().nextBoolean()
-
-                while (!found && !resumed) {
-                    if (canCreate) {
-                        if (onServer) {
-                            logInfo("Starting XYO BLE Server.")
-                            advertiser.startAdvertising()
-
-                            delay((Math.random()*SWITCH_MAX).toLong() + 5_000)
-
-                            logInfo("Stopping XYO BLE Server.")
-                            stopAdvertiser()
-                            onServer = false
-                        } else {
-                            logInfo("Starting XYO BLE Client.")
-                            clientFinder.start(procedureCatalogue)
-
-                            delay((Math.random()*SWITCH_MAX).toLong() + 5_000)
-
-
-                            logInfo("Stopping XYO BLE Client.")
-                            clientFinder.stop()
-                            onServer = true
-                        }
-                    } else {
-                        delay(TRY_WAIT_RESOLUTION.toLong())
+            GlobalScope.launch {
+                val connectionCreationListener = object : XyoBluetoothPipeCreatorListener {
+                    override fun onCreatedConnection(connection: XyoBluetoothConnection) {
+                        val key = connection.toString()
+                        connection.addListener(key, object : XyoBluetoothConnectionListener {
+                            override fun onConnectionRequest() {}
+                            override fun onConnectionFail() {}
+                            override fun onCreated(pipe: XyoNetworkPipe) {
+                                if (!resumed) {
+                                    resumed = true
+                                    cont.resume(pipe)
+                                }
+                            }
+                        })
                     }
                 }
+
+                serverFinder.addListener(serverKey, connectionCreationListener)
+                clientFinder.addListener(clientKey, connectionCreationListener)
+                advertiser.startAdvertising().await()
+                serverFinder.start(procedureCatalogue)
+                clientFinder.start(procedureCatalogue)
             }
-
-            /**
-             * The standard listener to add to connection creators.
-             */
-            val listener = object : XyoBluetoothPipeCreatorListener {
-                override fun onCreatedConnection(connection: XyoBluetoothConnection) {
-                    val key = connection.toString()
-                    connection.addListener(key, object : XyoBluetoothConnectionListener {
-                        override fun onConnectionRequest() {
-                            isTrying = true
-                        }
-
-                        override fun onConnectionFail() {
-                            isTrying = false
-                        }
-
-                        override fun onCreated(pipe: XyoNetworkPipe) {
-                            if (!resumed) {
-                                found = true
-                                resumed = true
-                                job.cancel()
-                                cont.resume(pipe)
-                            }
-                        }
-                    })
-                }
-            }
-
-            serverFinder.addListener(serverKey, listener)
-            clientFinder.addListener(clientKey, listener)
         }
 
-        /**
-         * Shut everything down.
-         */
         serverFinder.stop()
         clientFinder.stop()
-
         stopAdvertiser()
-
         clientFinder.removeListener(clientKey)
         serverFinder.removeListener(serverKey)
-
 
         if (pipe is XyoBluetoothClient.XyoBluetoothClientPipe) {
             connectionRssi = pipe.rssi

@@ -1,5 +1,7 @@
 package network.xyo.modbluetoothkotlin.packet
 
+import android.util.Log
+import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
 
 /**
@@ -25,18 +27,23 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
      * @return If the packet if finished, it will return the completed packet.
      */
     fun addPacket (toAdd : ByteArray) : ByteArray? {
+
+
         if (totalSize == 0 && currentSize == 0) {
             totalSize = ByteBuffer.wrap(toAdd.copyOfRange(0, 4)).int
             packets.add(toAdd.copyOfRange(4, toAdd.size))
             currentSize += toAdd.size
+            Log.v("WIN", "ADDING PACKET ${toAdd.toHexString()} $currentSize/$totalSize")
             return null
         }
 
         packets.add(toAdd)
         currentSize += toAdd.size
 
+        Log.v("WIN", "ADDING PACKET ${toAdd.toHexString()} $currentSize/$totalSize")
+
         if (totalSize == currentSize) {
-           return getCurrentBuffer()
+            return getCurrentBuffer()
         }
 
         return null
