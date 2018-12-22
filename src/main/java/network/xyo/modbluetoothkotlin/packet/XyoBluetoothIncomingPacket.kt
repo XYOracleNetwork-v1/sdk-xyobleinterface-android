@@ -33,15 +33,12 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
             totalSize = ByteBuffer.wrap(toAdd.copyOfRange(0, 4)).int
             packets.add(toAdd.copyOfRange(4, toAdd.size))
             currentSize += toAdd.size
-            Log.v("WIN", "ADDING PACKET ${toAdd.toHexString()} $currentSize/$totalSize")
             return null
         }
 
         packets.add(toAdd)
         currentSize += toAdd.size
-
-        Log.v("WIN", "ADDING PACKET ${toAdd.toHexString()} $currentSize/$totalSize")
-
+        
         if (totalSize == currentSize) {
             return getCurrentBuffer()
         }
