@@ -9,16 +9,23 @@ import java.nio.ByteBuffer
  * @param chunkSize The number of bytes per chunk.
  * @param bytes The bytes to chunk.
  */
-class XyoBluetoothOutgoingPacket (private val chunkSize : Int, private val bytes : ByteArray) {
+class XyoBluetoothOutgoingPacket (private val chunkSize : Int, bytes : ByteArray) {
     private var currentIndex = 0
-    private val encodedSize = ByteBuffer.allocate(4).putInt(bytes.size + 4).array()
+    private val sizeWithBytes = getSizeWithBytes(bytes)
+
+    private fun getSizeWithBytes (bytes : ByteArray) : ByteArray {
+        val buff = ByteBuffer.allocate(bytes.size + 4)
+        buff.putInt(bytes.size + 4)
+        buff.put(bytes)
+        return buff.array()
+    }
 
     /**
      * If there are more packets to send.
      */
     val canSendNext : Boolean
         get() {
-            return bytes.size != currentIndex
+            return sizeWithBytes.size != currentIndex
         }
 
 
@@ -26,27 +33,13 @@ class XyoBluetoothOutgoingPacket (private val chunkSize : Int, private val bytes
      * Gets the next packet to send.
      */
     fun getNext() : ByteArray {
-        val startingIndex : Int
-        val packet = ByteArray(Math.min(chunkSize, bytes.size - currentIndex))
+        val packet = ByteArray(Math.min(chunkSize, (sizeWithBytes.size - currentIndex)))
 
-        println(packet.size)
 
-        if (currentIndex == 0) {
-            for (i in 0 until encodedSize.size) {
-                packet[i] = encodedSize[i]
-            }
-            startingIndex = 4
-        } else {
-            startingIndex = 0
-        }
-
-        for (i in startingIndex until packet.size) {
-            packet[i] = bytes[currentIndex]
+        for (i in 0 until packet.size) {
+            packet[i] = sizeWithBytes[currentIndex]
             currentIndex++
         }
-
-        println("ALL BYTES: ${bytes.toHexString()}")
-        println("PACKET   : ${packet.toHexString()}")
 
         return packet
     }
