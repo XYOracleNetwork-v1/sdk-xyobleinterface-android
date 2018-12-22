@@ -90,19 +90,14 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, private val adverti
 
                 serverFinder.addListener(serverKey, connectionCreationListener)
                 clientFinder.addListener(clientKey, connectionCreationListener)
-                Log.v("WIN", "STARTING ADVERSIZING")
                 advertiser.startAdvertising().await()
-                Log.v("WIN", "DID ADVERSIZING")
                 serverFinder.start(procedureCatalogue)
                 clientFinder.start(procedureCatalogue)
             }
         }
 
-
-        Log.v("WIN", "FOUND PIPE STOPING ALL")
         serverFinder.stop()
         clientFinder.stop()
-        Log.v("WIN", "STOP ADVERTIZER")
         stopAdvertiser()
         clientFinder.removeListener(clientKey)
         serverFinder.removeListener(serverKey)
