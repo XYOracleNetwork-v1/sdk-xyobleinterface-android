@@ -8,8 +8,8 @@
 
 | Branches        | Status           |
 | ------------- |:-------------:|
-| Master      | [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android) |
-| Develop      | [![](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android/tree/develop.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-bluetooth-android/tree/develop)      |
+| Master      | [![](https://circleci.com/gh/XYOracleNetwork/mod-ble-android.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-ble-android) |
+| Develop      | [![](https://circleci.com/gh/XYOracleNetwork/mod-ble-android/tree/develop.svg?style=shield)](https://circleci.com/gh/XYOracleNetwork/mod-ble-android/tree/develop)      |
 
 A basic network module that complies to the XYO Network Provider Interface.
 
