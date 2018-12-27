@@ -1,8 +1,8 @@
 package network.xyo.modbluetoothkotlin.packet
 
-import network.xyo.sdkcorekotlin.data.XyoByteArrayReader
-import network.xyo.sdkcorekotlin.data.XyoByteArraySetter
-import network.xyo.sdkcorekotlin.data.XyoUnsignedHelper
+import android.util.Log
+import network.xyo.sdkobjectmodelkotlin.objects.toHexString
+import java.nio.ByteBuffer
 
 /**
  * A class to help receive chucked data that came from XyoBluetoothOutgoingPacket.
@@ -27,8 +27,10 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
      * @return If the packet if finished, it will return the completed packet.
      */
     fun addPacket (toAdd : ByteArray) : ByteArray? {
+
+
         if (totalSize == 0 && currentSize == 0) {
-            totalSize = XyoUnsignedHelper.readUnsignedInt(XyoByteArrayReader(toAdd).read(0, 4))
+            totalSize = ByteBuffer.wrap(toAdd.copyOfRange(0, 4)).int
             packets.add(toAdd.copyOfRange(4, toAdd.size))
             currentSize += toAdd.size
             return null
@@ -36,9 +38,9 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
 
         packets.add(toAdd)
         currentSize += toAdd.size
-
+        
         if (totalSize == currentSize) {
-           return getCurrentBuffer()
+            return getCurrentBuffer()
         }
 
         return null
@@ -48,13 +50,13 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
      * Get the current packet buffer.
      */
     fun getCurrentBuffer () : ByteArray {
-        val merger = XyoByteArraySetter(packets.size)
+        val buff = ByteBuffer.allocate(currentSize - 4)
 
         for (i in 0 until packets.size) {
-            merger.add(packets[i], i)
+            buff.put(packets[i])
         }
 
-        return merger.merge()
+        return buff.array()
     }
 
     init {
