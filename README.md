@@ -4,7 +4,7 @@
 
 # mod-bluetooth-android
 
-[![](https://jitpack.io/v/XYOracleNetwork/mod-bluetooth-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-bluetooth-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev)
+[![](https://jitpack.io/v/XYOracleNetwork/mod-ble-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-ble-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev)
 
 | Branches        | Status           |
 | ------------- |:-------------:|
