@@ -1,0 +1,94 @@
+apply plugin: 'com.android.library'
+apply plugin: 'kotlin-android'
+group="com.github.XYOracleNetwork"
+
+android {
+    compileSdkVersion 28
+
+    defaultConfig {
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+
+    }
+
+    compileOptions {
+        kotlinOptions {
+            allWarningsAsErrors = true
+        }
+    }
+
+    defaultConfig {
+        minSdkVersion rootProject.ext.minSdkVersion
+        targetSdkVersion rootProject.ext.targetSdkVersion
+    }
+
+    defaultPublishConfig "jitpackRelease"
+
+    lintOptions {
+        htmlReport true
+        htmlOutput file("lint-report.html")
+        abortOnError true
+        warningsAsErrors true
+    }
+
+    sourceSets {
+        main {
+            assets {
+                srcDir 'assets'
+            }
+            java {
+                srcDirs += 'src/main/kotlin'
+            }
+        }
+    }
+
+    flavorDimensions "xylibs"
+    productFlavors {
+        local {
+            dimension "xylibs"
+        }
+        jitpack {
+            dimension "xylibs"
+        }
+    }
+
+    buildTypes {
+        release {
+            debuggable true
+            minifyEnabled true
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+        debug {
+            minifyEnabled false
+            debuggable true
+        }
+    }
+}
+
+dependencies {
+    implementation fileTree(include: ['*.jar'], dir: 'libs')
+    testImplementation 'junit:junit:4.12'
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
+    implementation 'com.github.kotlin-graphics:kotlin-unsigned:v2.1'
+    implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.0'
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-kotlin:v0.1.1-beta.0'
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
+
+    localImplementation project(':ble-android-library')
+    localImplementation project(':core-android-library')
+    localImplementation project(':sdk-core-kotlin')
+}
+
+allprojects {
+    repositories {
+        jcenter()
+        maven { url 'https://jitpack.io' }
+        google()
+    }
+}
