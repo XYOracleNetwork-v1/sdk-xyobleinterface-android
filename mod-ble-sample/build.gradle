@@ -84,9 +84,10 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
 
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
+
     localImplementation project(':ble-android-library')
     localImplementation project(':mod-ble-android')
-    localImplementation project(':sdk-core-kotlin')
     localImplementation project(':core-android-library')
 
     implementation "androidx.legacy:legacy-support-v4:1.0.0"

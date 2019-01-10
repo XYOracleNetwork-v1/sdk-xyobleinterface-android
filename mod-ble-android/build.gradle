@@ -75,14 +75,13 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
     implementation 'com.github.kotlin-graphics:kotlin-unsigned:v2.1'
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
 
     jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.0'
-    jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-kotlin:v0.1.1-beta.0'
     jitpackImplementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
 
     localImplementation project(':ble-android-library')
     localImplementation project(':core-android-library')
-    localImplementation project(':sdk-core-kotlin')
 }
 
 allprojects {

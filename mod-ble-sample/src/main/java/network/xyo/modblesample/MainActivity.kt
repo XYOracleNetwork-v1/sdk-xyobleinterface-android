@@ -33,6 +33,9 @@ import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
 import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
+import network.xyo.sdkcorekotlin.node.XyoHeuristicGetter
+import network.xyo.sdkcorekotlin.schemas.XyoSchemas
+import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 
 
 /**
@@ -115,7 +118,7 @@ class MainActivity : Activity() {
         /**
          * Tries to create a bound witness with the given pipe and will update the UI accordingly.
          */
-        fun tryBoundWitnessPipe(pipe: XyoNetworkPipe) = GlobalScope.launch {
+        suspend fun tryBoundWitnessPipe(pipe: XyoNetworkPipe) = GlobalScope.launch {
 
             addListener("bw_client", object : XyoNodeListener {
                 override fun onBoundWitnessStart() {}
@@ -226,11 +229,11 @@ class MainActivity : Activity() {
                 }
 
                 override fun onCreated(pipe: XyoNetworkPipe) {
-                    node.tryBoundWitnessPipe(pipe)
+                    GlobalScope.launch {
+                        node.tryBoundWitnessPipe(pipe)
+                    }
                 }
-
             })
-
         }
     }
 
@@ -242,10 +245,21 @@ class MainActivity : Activity() {
                         showProgressBar()
 
                         GlobalScope.launch {
-                            val pipe = device.createPipe(boundWitnessCatalogue).await()
+                            val pipe = device.createPipe(boundWitnessCatalogue).await() as? XyoBluetoothClient.XyoBluetoothClientPipe
 
                             if (pipe != null) {
+                                node.addHeuristic("rssi", object : XyoHeuristicGetter {
+                                    override fun getHeuristic(): XyoBuff? {
+                                        val rssi = pipe.rssi?.toByte() ?: return null
+
+                                        return XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi))
+                                    }
+                                })
+
                                 node.tryBoundWitnessPipe(pipe)
+
+                                node.removeHeuristic("rssi")
+
                             } else {
                                hideProgressBar()
                             }

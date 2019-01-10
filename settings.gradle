@@ -1,11 +1,7 @@
 include ':mod-ble-android'
 include ':mod-ble-sample'
 include ':core-android-library'
-include ':sdk-objectmodel-kotlin'
-include ':sdk-core-kotlin'
 include ':ble-android-library'
 
 project(':core-android-library').projectDir = new File(settingsDir, '../sdk-core-android/core-android-library')
-project(':sdk-objectmodel-kotlin').projectDir = new File('../sdk-objectmodel-kotlin')
-project(':sdk-core-kotlin').projectDir = new File('../sdk-core-kotlin')
 project(':ble-android-library').projectDir = new File('../sdk-ble-android/ble-android-library')
