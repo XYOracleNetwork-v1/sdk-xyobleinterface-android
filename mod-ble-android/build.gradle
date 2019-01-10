@@ -1,19 +1,37 @@
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
-group="com.github.XYOracleNetwork"
+apply plugin: 'com.github.dcendents.android-maven'
+group = 'com.github.XYOracleNetwork'
+
+buildscript {
+    repositories {
+        mavenCentral()
+        mavenLocal()
+        jcenter()
+        google()
+    }
+
+    dependencies {
+        classpath "com.android.tools.build:gradle:3.2.1"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
+        classpath "com.github.dcendents:android-maven-gradle-plugin:$mavenVersion"
+    }
+}
+
+
+repositories {
+    mavenCentral()
+    maven { url 'https://jitpack.io' }
+}
+
+configurations {
+    localImplementation
+    jitpackApi
+}
 
 android {
-    compileSdkVersion 28
-
-    defaultConfig {
-        minSdkVersion 21
-        targetSdkVersion 28
-        versionCode 1
-        versionName "1.0"
-
-        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
-
-    }
+    compileSdkVersion rootProject.ext.compileSdkVersion
+    buildToolsVersion rootProject.ext.buildToolsVersion
 
     compileOptions {
         kotlinOptions {
@@ -27,7 +45,6 @@ android {
     }
 
     defaultPublishConfig "jitpackRelease"
-    
 
     lintOptions {
         htmlReport true
@@ -83,12 +100,4 @@ dependencies {
 
     localImplementation project(':ble-android-library')
     localImplementation project(':core-android-library')
-}
-
-allprojects {
-    repositories {
-        jcenter()
-        maven { url 'https://jitpack.io' }
-        google()
-    }
 }
