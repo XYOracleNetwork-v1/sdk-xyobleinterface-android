@@ -93,8 +93,8 @@ dependencies {
     api "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
     api "org.jetbrains.kotlinx:kotlinx-coroutines-android:$coroutinesVersion"
     api "androidx.annotation:annotation:1.0.1"
-
     implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
+
     jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.1'
     jitpackImplementation 'com.github.XYOracleNetwork:sdk-ble-android:17c54a31de'
 
