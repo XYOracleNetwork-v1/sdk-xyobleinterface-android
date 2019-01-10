@@ -86,9 +86,13 @@ dependencies {
 
     implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
 
+    implementation project(':mod-ble-android')
+
     localImplementation project(':ble-android-library')
-    localImplementation project(':mod-ble-android')
     localImplementation project(':core-android-library')
+
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.1'
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
 
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
     implementation "androidx.vectordrawable:vectordrawable:1.0.1"

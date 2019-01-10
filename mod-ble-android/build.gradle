@@ -27,6 +27,7 @@ android {
     }
 
     defaultPublishConfig "jitpackRelease"
+    
 
     lintOptions {
         htmlReport true
@@ -77,8 +78,8 @@ dependencies {
     implementation "org.jetbrains.kotlinx:kotlinx-coroutines-core:$coroutinesVersion"
     implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
 
-    jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.0'
-    jitpackImplementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.1'
+    jitpackImplementation 'com.github.XYOracleNetwork:sdk-ble-android:17c54a31de'
 
     localImplementation project(':ble-android-library')
     localImplementation project(':core-android-library')
