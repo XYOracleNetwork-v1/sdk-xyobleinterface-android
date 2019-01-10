@@ -1,4 +1,4 @@
-include ':mod-ble-android'
+include ':sdk-ble-mod'
 include ':mod-ble-sample'
 include ':core-android-library'
 include ':ble-android-library'

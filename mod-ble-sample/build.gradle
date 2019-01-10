@@ -86,7 +86,7 @@ dependencies {
 
     implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
 
-    implementation project(':mod-ble-android')
+    implementation project(':sdk-ble-mod')
 
     localImplementation project(':ble-android-library')
     localImplementation project(':core-android-library')
