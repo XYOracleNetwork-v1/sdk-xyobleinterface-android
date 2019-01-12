@@ -5,6 +5,7 @@ android:
     - android-28
 
 before_script:
+  - yes | sdkmanager "platforms;android-28"
   - chmod +x ./gradlew
 
 script:
