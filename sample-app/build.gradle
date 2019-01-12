@@ -1,0 +1,48 @@
+apply plugin: 'com.android.application'
+apply plugin: 'kotlin-android'
+apply plugin: 'kotlin-android-extensions'
+
+android {
+    compileSdkVersion 28
+    defaultConfig {
+        applicationId "network.xyo.modblesample"
+        minSdkVersion 21
+        targetSdkVersion 28
+        versionCode 1
+        versionName "1.0"
+        testInstrumentationRunner "android.support.test.runner.AndroidJUnitRunner"
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+    packagingOptions {
+        exclude 'META-INF/build.kotlin_module'
+    }
+}
+
+dependencies {
+    implementation fileTree(dir: 'libs', include: ['*.jar'])
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlin_version"
+
+    implementation "androidx.core:core:1.0.1"
+    implementation "androidx.legacy:legacy-support-v4:1.0.0"
+
+    implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.1'
+    implementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
+    implementation "com.nabinbhandari.android:permissions:3.8"
+    implementation "androidx.appcompat:appcompat:1.0.2"
+    implementation "com.google.android.material:material:1.0.0"
+    implementation "androidx.vectordrawable:vectordrawable:1.0.1"
+
+    implementation project(":mod-ble")
+}
+repositories {
+    mavenCentral()
+    maven {
+        url 'https://jitpack.io'
+    }
+}
