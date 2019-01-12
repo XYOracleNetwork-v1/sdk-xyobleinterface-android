@@ -38,13 +38,9 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, userAdvertiser: XYB
      * The implementation to stop all network services.
      */
     override fun stop() {
-        println("1")
         clientFinder.stop()
-        println("2")
         serverFinder.stop()
-        println("3")
         advertiser.stopAdvertiser()
-        println("4")
         canCreate = false
     }
 
