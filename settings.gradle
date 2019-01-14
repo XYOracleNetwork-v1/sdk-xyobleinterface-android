@@ -1,8 +1,1 @@
-
-include ':xycore'
-include ':sdk-core-kotlin'
-include ':sdk-android-library'
-
-project(':xycore').projectDir = new File(settingsDir, '../sdk-core-android/core-android-library')
-project(':sdk-core-kotlin').projectDir = new File('../sdk-core-kotlin')
-project(':sdk-android-library').projectDir = new File('../sdk-ble-android/sdk-android-library')
+include ':xyo-mod-sample', ':ble-xyo-module'
