@@ -22,8 +22,8 @@ class XyoBluetoothAdvertiser (val id : ByteArray, private val advertiser: XYBlue
         if (manData.error != null) return@async manData.error
 
         // todo Get correct manufacturer ID
-//        val manId = advertiser.changeManufacturerId(13, false).await()
-//        if (manId.error != null) return@async manId.error
+        val manId = advertiser.changeManufacturerId(13, false).await()
+        if (manId.error != null) return@async manId.error
 
         val conResult = advertiser.changeContactable(true, false).await()
         if (conResult.error != null) return@async conResult.error
