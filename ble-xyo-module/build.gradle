@@ -12,7 +12,7 @@ buildscript {
 
     dependencies {
         classpath "com.android.tools.build:gradle:3.2.1"
-        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
+        classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
     }
 }
@@ -43,14 +43,14 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.2'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.5'
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.1'
     implementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
     androidTestImplementation 'com.android.support.test.espresso:espresso-core:3.0.2'
-    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlin_version"
+    implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk7:$kotlinVersion"
 }
 repositories {
     mavenCentral()
