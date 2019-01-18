@@ -20,11 +20,11 @@ import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClientCreator
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
-import network.xyo.sdkcorekotlin.hashing.basic.XyoSha3
+import network.xyo.sdkcorekotlin.hashing.XyoSha3
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import network.xyo.sdkcorekotlin.node.XyoNodeBase
+import network.xyo.sdkcorekotlin.node.XyoOriginChainCreator
 import network.xyo.sdkcorekotlin.node.XyoNodeListener
-import network.xyo.sdkcorekotlin.storage.XyoInMemoryStorageProvider
+import network.xyo.sdkcorekotlin.persist.XyoInMemoryStorageProvider
 import java.nio.ByteBuffer
 import kotlin.concurrent.thread
 import network.xyo.modblesample.adapters.DeviceAdapter
@@ -32,7 +32,7 @@ import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
 import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkcorekotlin.node.XyoHeuristicGetter
+import network.xyo.sdkcorekotlin.heuristics.XyoHeuristicGetter
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 
@@ -109,7 +109,7 @@ class MainActivity : Activity() {
      * The node being used to do bound witnesses, please note that the state of the node will not persist after
      * the activity reloads.
      */
-    private val node = object : XyoNodeBase(XyoInMemoryStorageProvider(), XyoSha3) {
+    private val node = object : XyoOriginChainCreator(XyoInMemoryStorageProvider(), XyoSha3) {
         override fun getChoice(catalog: Int, strict: Boolean): Int {
             return 1
         }
@@ -119,10 +119,7 @@ class MainActivity : Activity() {
          */
         suspend fun tryBoundWitnessPipe(pipe: XyoNetworkPipe) = GlobalScope.launch {
 
-            addListener("bw_client", object : XyoNodeListener {
-                override fun onBoundWitnessStart() {}
-                override fun onBoundWitnessDiscovered(boundWitness: XyoBoundWitness) {}
-
+            addListener("bw_client", object : XyoNodeListener() {
                 override fun onBoundWitnessEndFailure(error: Exception?) {
                     hideProgressBar()
                     removeListener("bw")
@@ -197,13 +194,13 @@ class MainActivity : Activity() {
      * Init the Bluetooth Server, this will set the member server object, and start the server.
      */
     private fun initServer () = GlobalScope.launch {
-        server = createNewServer()
-        server.spinUpServer().await()
-        server.addListener("main", serverListener)
-        server.start(boundWitnessCatalogue)
-        advertiser = createNewAdvertiser()
-        advertiser.startAdvertiserFirst().await()
-        advertiser.startAdvertiser().await()
+//        server = createNewServer()
+//        server.spinUpServer().await()
+//        server.addListener("main", serverListener)
+//        server.start(boundWitnessCatalogue)
+//        advertiser = createNewAdvertiser()
+//        advertiser.startAdvertiserFirst().await()
+//        advertiser.startAdvertiser().await()
     }
 
     /**
