@@ -30,9 +30,9 @@ dependencies {
     implementation "androidx.core:core:1.0.1"
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
 
-    implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.1'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:45a6184863'
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.6'
+    implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.3'
+    implementation 'com.github.XYOracleNetwork:sdk-ble-android:b00c429309'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.7'
     implementation "com.nabinbhandari.android:permissions:3.8"
     implementation "androidx.appcompat:appcompat:1.0.2"
     implementation "com.google.android.material:material:1.0.0"
