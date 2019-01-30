@@ -45,7 +45,7 @@ dependencies {
 
     implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.1-beta.7'
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.3'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:c7f6233181'
+    implementation 'com.github.XYOracleNetwork:sdk-ble-android:1996d6f988'
 
     testImplementation 'junit:junit:4.12'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'

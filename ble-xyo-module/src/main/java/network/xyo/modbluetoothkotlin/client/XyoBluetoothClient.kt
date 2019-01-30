@@ -369,8 +369,8 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
 
 
     companion object : XYCreator() {
-        const val FIRST_NOTIFY_TIMEOUT = 10_000
-        const val NOTIFY_TIMEOUT = 5_000
+        const val FIRST_NOTIFY_TIMEOUT = 30_000
+        const val NOTIFY_TIMEOUT = 20_000
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 23
 
