@@ -10,8 +10,8 @@ import com.nabinbhandari.android.permissions.Permissions
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import network.xyo.ble.devices.XY4BluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
+import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYSmartScanModern
@@ -35,6 +35,7 @@ import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.heuristics.XyoHeuristicGetter
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
+import java.util.*
 
 
 /**
@@ -93,7 +94,10 @@ class MainActivity : Activity() {
      * @return The created advertiser.
      */
     private fun createNewAdvertiser () : XyoBluetoothAdvertiser {
-        return XyoBluetoothAdvertiser(byteArrayOf(0x00, 0x01), XYBluetoothAdvertiser(this))
+        return XyoBluetoothAdvertiser(
+                Random().nextInt(Short.MAX_VALUE + 1).toShort(),
+                Random().nextInt(Short.MAX_VALUE + 1).toShort(),
+                XYBluetoothAdvertiser(this, null))
     }
 
     /**
@@ -183,8 +187,8 @@ class MainActivity : Activity() {
      * Init the Bluetooth Scanner, this will set the member scanner object, and will start the scanner.
      */
     private fun initScanner () = GlobalScope.launch {
-        XY4BluetoothDevice.enable(true)
         XyoBluetoothClient.enable(true)
+        XYIBeaconBluetoothDevice.enable(true)
         scanner = createNewScanner()
         scanner.start()
         clientFinder = XyoBluetoothClientCreator(scanner)
@@ -194,13 +198,13 @@ class MainActivity : Activity() {
      * Init the Bluetooth Server, this will set the member server object, and start the server.
      */
     private fun initServer () = GlobalScope.launch {
-//        server = createNewServer()
-//        server.spinUpServer().await()
-//        server.addListener("main", serverListener)
-//        server.start(boundWitnessCatalogue)
-//        advertiser = createNewAdvertiser()
-//        advertiser.startAdvertiserFirst().await()
-//        advertiser.startAdvertiser().await()
+        server = createNewServer()
+        server.spinUpServer().await()
+        server.addListener("main", serverListener)
+        server.start(boundWitnessCatalogue)
+        advertiser = createNewAdvertiser()
+        advertiser.configureAdvertiser()
+        advertiser.startAdvertiser().await()
     }
 
     /**

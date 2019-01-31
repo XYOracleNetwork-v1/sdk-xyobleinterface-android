@@ -25,14 +25,21 @@ import kotlin.coroutines.suspendCoroutine
  * @param bleServer The BLE server to use as a peripheral.
  * @param userAdvertiser The BLE advertiser to use when advertising the BLE XYO Service.
  */
-class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, userAdvertiser: XYBluetoothAdvertiser, scanner: XYSmartScanModern, val errorListener : XyoBluetoothNetworkListener?) : XyoNetworkProviderInterface, XYBase() {
+class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer,
+                           userAdvertiser: XYBluetoothAdvertiser,
+                           scanner: XYSmartScanModern,
+                           private val errorListener : XyoBluetoothNetworkListener?) : XyoNetworkProviderInterface, XYBase() {
+
     private var canCreate = false
-    private val id = getId()
 
     val clientFinder = XyoBluetoothClientCreator(scanner)
     val serverFinder = XyoBluetoothServer(bleServer)
     var connectionRssi : Int? = null
-    val advertiser = XyoBluetoothAdvertiser(id, userAdvertiser)
+    val advertiser = XyoBluetoothAdvertiser(
+            Random().nextInt(Short.MAX_VALUE + 1).toShort(),
+            Random().nextInt(Short.MAX_VALUE + 1).toShort(),
+            userAdvertiser
+    )
 
     /**
      * The implementation to stop all network services.
@@ -51,24 +58,16 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, userAdvertiser: XYB
         canCreate = true
     }
 
-    private fun getId () : ByteArray {
-        val id = ByteArray(2)
-        Random().nextBytes(id)
-        return id
-    }
-
     /**
      * The implementation to find a peer given a procedureCatalogue.
      */
     override fun find(procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.async {
-        Log.v("WIN", "FIND")
         canCreate = true
         connectionRssi = null
         var resumed = false
 
         val serverKey = "server$this"
         val clientKey = "client$this"
-
 
         val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
             GlobalScope.launch {
@@ -119,23 +118,11 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer, userAdvertiser: XYB
                 errorListener?.onError(error)
             }
 
-            advertiser.startAdvertiserFirst().await()
+            advertiser.configureAdvertiser()
         }
     }
 
     interface XyoBluetoothNetworkListener {
         fun onError (error : XYBluetoothError)
-    }
-
-    companion object {
-        /**
-         * The max time to allow on either a client or server in milliseconds.
-         */
-        const val SWITCH_MAX = 30_000
-
-        /**
-         * How long wait in between checks of the client or server is still trying.
-         */
-        const val TRY_WAIT_RESOLUTION = 5_000
     }
 }

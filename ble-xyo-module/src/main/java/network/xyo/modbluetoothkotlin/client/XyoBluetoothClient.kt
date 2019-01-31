@@ -1,6 +1,5 @@
 package network.xyo.modbluetoothkotlin.client
 
-import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.bluetooth.BluetoothManager
@@ -8,8 +7,10 @@ import android.content.Context
 import android.os.ParcelUuid
 import android.util.Log
 import kotlinx.coroutines.*
+import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
+import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.XYBluetoothError
 import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
@@ -35,7 +36,7 @@ import kotlin.coroutines.suspendCoroutine
  * @property device The android bluetooth device
  * @property hash The unique hash of the device
  */
-class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int) : XYBluetoothDevice(context, device, hash) {
+class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int) : XYIBeaconBluetoothDevice(context, scanResult, hash) {
     /**
      * The standard size of the MTU of the connection. This value is used when chunking large amounts of data.
      */
@@ -382,33 +383,23 @@ class XyoBluetoothClient(context: Context, device: BluetoothDevice?, hash : Int)
         fun enable(enable: Boolean) {
             if (enable) {
                 serviceToCreator[XyoUuids.XYO_SERVICE] = this
+                uuidToCreator[XyoUuids.XYO_SERVICE] = this
             } else {
                 serviceToCreator.remove(XyoUuids.XYO_SERVICE)
+                uuidToCreator.remove(XyoUuids.XYO_SERVICE)
             }
         }
 
-
-
         override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<Int, XYBluetoothDevice>, foundDevices: HashMap<Int, XYBluetoothDevice>) {
-            val device = scanResult.device
+            val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode()
 
-            /**
-             * Get the device address to make sure you don't connect to yourself
-             */
-            val bluetoothManager = context.applicationContext?.getSystemService(Context.BLUETOOTH_SERVICE) as? BluetoothManager
-            val bluetoothAdapter = bluetoothManager?.adapter
-            val isAXyoDevice = scanResult.scanRecord?.serviceUuids?.contains(ParcelUuid(XyoUuids.XYO_SERVICE))
+            if (!foundDevices.containsKey(hash) && !globalDevices.contains(hash) && hash != null) {
+                val createdDevice = XyoBluetoothClient(context, scanResult, hash)
 
-            if (device != null && isAXyoDevice == true && bluetoothAdapter?.address != device.address) {
-                val hash = scanResult.scanRecord?.getManufacturerSpecificData(13)?.contentHashCode() ?: device.address.hashCode()
-
-                if (!foundDevices.containsKey(hash) && !globalDevices.contains(hash)) {
-                    val createdDevice = XyoBluetoothClient(context, device, hash)
-
-                    foundDevices[hash] = createdDevice
-                    globalDevices[hash] = createdDevice
-                }
+                foundDevices[hash] = createdDevice
+                globalDevices[hash] = createdDevice
             }
+
         }
     }
 }

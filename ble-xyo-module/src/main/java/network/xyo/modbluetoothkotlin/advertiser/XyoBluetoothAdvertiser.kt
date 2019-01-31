@@ -1,40 +1,39 @@
 package network.xyo.modbluetoothkotlin.advertiser
 
 import android.bluetooth.le.AdvertiseSettings
-import android.os.ParcelUuid
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
+import network.xyo.ble.gatt.server.XYIBeaconAdvertiseDataCreator
 import network.xyo.modbluetoothkotlin.XyoUuids
+import java.nio.ByteBuffer
 
 /**
  * A class for managing XYO advertising.
  *
- * @property id The device ID to advertise (recommended 2 bytes)
+ * @property major The device major to advertise
+ * @property minor The device minor to advertise
  * @param advertiser The XY advertiser to advertise with.
  */
-class XyoBluetoothAdvertiser (val id : ByteArray, private val advertiser: XYBluetoothAdvertiser) {
+class XyoBluetoothAdvertiser (private val major : Short, private val minor : Short, private val advertiser: XYBluetoothAdvertiser) {
     /**
      * Start a advertisement cycle
      */
-    fun startAdvertiserFirst() = GlobalScope.async {
-        val manData = advertiser.changeManufacturerData(id, false).await()
-        if (manData.error != null) return@async manData.error
+    fun configureAdvertiser() {
+        val encodeMajor = ByteBuffer.allocate(2).putShort(major).array()
+        val encodedMinor = ByteBuffer.allocate(2).putShort(minor).array()
+        val advertiseData =  XYIBeaconAdvertiseDataCreator.create(
+                encodeMajor,
+                encodedMinor,
+                XyoUuids.XYO_SERVICE,
+                APPLE_MANUFACTURER_ID,
+                false
+        )
 
-        // todo Get correct manufacturer ID
-        val manId = advertiser.changeManufacturerId(13, false).await()
-        if (manId.error != null) return@async manId.error
-
-        val conResult = advertiser.changeContactable(true, false).await()
-        if (conResult.error != null) return@async conResult.error
-
-        val modResult = advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY, false).await()
-        if (modResult.error != null) return@async modResult.error
-
-        val levResult = advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH, false).await()
-        if (levResult.error != null) return@async levResult.error
-
-        return@async advertiser.changePrimaryService(ParcelUuid(XyoUuids.XYO_SERVICE), false).await().error
+        advertiser.advertisingData = advertiseData
+        advertiser.changeContactable(false) // set this to false for iBeacon
+        advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
+        advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
     }
 
     /**
@@ -46,5 +45,9 @@ class XyoBluetoothAdvertiser (val id : ByteArray, private val advertiser: XYBlue
 
     fun startAdvertiser () = GlobalScope.async {
         return@async advertiser.startAdvertising()
+    }
+
+    companion object {
+        const val APPLE_MANUFACTURER_ID = 76
     }
 }

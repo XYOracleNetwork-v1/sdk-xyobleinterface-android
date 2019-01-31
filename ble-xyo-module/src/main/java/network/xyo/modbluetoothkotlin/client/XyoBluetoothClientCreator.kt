@@ -20,13 +20,6 @@ import kotlin.concurrent.thread
  */
 class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPipeCreatorBase() {
 
-    /**
-     * A map of all XyoBluetoothClient nearby.
-     *
-     * clients[DEVICE HASHCODE] = XyoBluetoothClient
-     */
-    val clients = ConcurrentHashMap<Int, XyoBluetoothClient>()
-
 
     /**
      * If we are currently trying to get a pipe with a device.
@@ -113,24 +106,25 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
      * @return A random XyoBluetoothClient. Will return null if there are no devices nearby.
      */
     private fun getRandomDevice () : XyoBluetoothClient? {
-        for (item in scanner.devices.values.shuffled()) {
-            if (item is XyoBluetoothClient) {
-                return item
+        val xyoClients = ArrayList<XyoBluetoothClient>()
+
+        for (device in scanner.devices.values) {
+            if (device is XyoBluetoothClient) {
+                xyoClients.add(device)
             }
         }
 
-//        val randomClients = clients.values.shuffled()
-//
-//        if (randomClients.isNotEmpty()) {
-//            val randomClient = randomClients.first()
-//
-//            if (randomClient.hashCode() == lastDevice && randomClients.size > 1) {
-//                return getRandomDevice()
-//            }
-//            return randomClient
-//        }
-//
-//        return null
+        val randomClients = xyoClients.shuffled()
+
+        if (randomClients.isNotEmpty()) {
+            val randomClient = randomClients.first()
+
+            if (randomClient.hashCode() == lastDevice && randomClients.size > 1) {
+                return getRandomDevice()
+            }
+            return randomClient
+        }
+
         return null
     }
 
@@ -155,37 +149,10 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
         }
 
         log.info("Could not create pipe : ${device.address}")
-        clients.remove(device.hashCode())
         log.info("Device is not XyoBluetoothClient : ${device.address}")
         gettingDevice = false
         return@async null
     }
-
-
-    /**
-     * The scanner callback to maintain a list of nearby devices. On the event "entered", the device will be added
-     * to the map. The device will be removed from the map on the "exited" event.
-     */
-    private val scannerCallback = object : XYSmartScan.Listener() {
-        override fun detected(device: XYBluetoothDevice) {
-            super.entered(device)
-
-            if (device is XyoBluetoothClient) {
-                if (!clients.containsKey(device.hashCode()) && canCreate) {
-                    clients[device.hashCode()] = device
-                }
-            }
-        }
-
-
-        override fun exited(device: XYBluetoothDevice) {
-            super.exited(device)
-            if (device is XyoBluetoothClient) {
-                clients.remove(device.hashCode())
-            }
-        }
-    }
-
 
 
     init {
@@ -193,20 +160,6 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
          * Enable the device to be created by the scanner
          */
         XyoBluetoothClient.enable(true)
-
-        /**
-         * Add the listener to the scanner to maintain a map of nearby devices.
-         */
-        scanner.addListener(this.toString(), scannerCallback)
-
-        /**
-         * Add all of the current nearby devices to the map of nearby devices.
-         */
-        for ((_, device) in scanner.devices) {
-            if (device is XyoBluetoothClient) {
-                clients[device.hashCode()] = device
-            }
-        }
     }
 
 
