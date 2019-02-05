@@ -2,7 +2,7 @@ package network.xyo.modbluetoothkotlin
 
 import android.util.Log
 import kotlinx.coroutines.*
-import network.xyo.ble.gatt.XYBluetoothError
+import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYSmartScanModern
@@ -112,7 +112,7 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer,
 
     init {
         GlobalScope.launch {
-            val error = serverFinder.spinUpServer().await().error
+            val error = serverFinder.spinUpServer().await()?.error
 
             if (error != null) {
                 errorListener?.onError(error)

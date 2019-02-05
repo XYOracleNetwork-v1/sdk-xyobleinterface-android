@@ -2,16 +2,15 @@ package network.xyo.modbluetoothkotlin.client
 
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
-import android.bluetooth.BluetoothManager
 import android.content.Context
-import android.os.ParcelUuid
-import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
-import network.xyo.ble.gatt.XYBluetoothError
+import network.xyo.ble.gatt.peripheral.XYBluetoothError
+import network.xyo.ble.gatt.peripheral.XYBluetoothGattCallback
+import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
@@ -19,7 +18,6 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
@@ -36,7 +34,7 @@ import kotlin.coroutines.suspendCoroutine
  * @property device The android bluetooth device
  * @property hash The unique hash of the device
  */
-class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int) : XYIBeaconBluetoothDevice(context, scanResult, hash) {
+class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int) : XYIBeaconBluetoothDevice(context, scanResult, hash.toString()) {
     /**
      * The standard size of the MTU of the connection. This value is used when chunking large amounts of data.
      */
@@ -53,11 +51,12 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
     fun createPipe(catalogueInterface: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
         return@async suspendCoroutine<XyoNetworkPipe?> { cont ->
             GlobalScope.launch {
-               connection {
+                connection {
                     val pipe = doCreatePipe(catalogueInterface).await()
 
                     cont.resume(pipe)
                     coroutineContext.cancel()
+                    return@connection XYBluetoothResult<Any?>(null)
                 }.await()
 
 
@@ -99,8 +98,8 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
 
         if (writeError != null) {
             log.info("Error writing catalogue to server. $writeError")
-            disconnect().await()
-            close().await()
+            disconnect()
+            close()
             return@async null
         }
 
@@ -115,8 +114,8 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
             log.info("Read the server's response (good).")
             return@async createPipeFromResponse(incomingPacket)
         } else {
-            disconnect().await()
-            close().await()
+            disconnect()
+            close()
             log.info("Error reading the server's response.")
             return@async null
         }
@@ -196,8 +195,8 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
          * be called after the pipe is finished being used.
          */
         override fun close(): Deferred<Any?> = GlobalScope.async {
-            disconnect().await()
-            this@XyoBluetoothClient.close().await()
+            disconnect()
+            this@XyoBluetoothClient.close()
         }
 
 
@@ -214,63 +213,55 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
          */
         override fun send(data: ByteArray, waitForResponse: Boolean): Deferred<ByteArray?> = GlobalScope.async {
             return@async suspendCoroutine<ByteArray?> { cont ->
-                GlobalScope.launch {
-                    val status = connection {
-                        val disconnectKey = this.toString() + Math.random().toString()
+                val disconnectKey = this.toString() + Math.random().toString()
 
-                        val sendAndReceive = GlobalScope.async {
+                val sendAndReceive = GlobalScope.async {
 
-                            val readJob = readIncommoding()
-                            val packetError = sendPacket(data).await()
+                    val readJob = readIncommoding()
+                    val packetError = sendPacket(data).await()
 
-                            log.info("Sent entire packet to the server.")
-                            if (packetError == null) {
-                                log.info("Sent entire packet to the server (good).")
-                                var valueIn: ByteArray? = null
+                    log.info("Sent entire packet to the server.")
+                    if (packetError == null) {
+                        log.info("Sent entire packet to the server (good).")
+                        var valueIn: ByteArray? = null
 
 
-                                if (waitForResponse) {
-                                    valueIn = readJob.await()
-                                }
-                                log.info("Have read entire server response packet.")
-                                removeListener(disconnectKey)
-                                cont.resume(valueIn)
-                            } else {
-                                log.info("Error sending entire packet to the server.")
-                                removeListener(disconnectKey)
-                                cont.resume(null)
-                            }
+                        if (waitForResponse) {
+                            valueIn = readJob.await()
                         }
-
-                        // add the disconnect listener
-                        log.info("Adding disconnect listener.")
-                        addListener(disconnectKey, object : XYBluetoothDevice.Listener() {
-                            override fun connectionStateChanged(device: XYBluetoothDevice, newState: Int) {
-                                when (newState) {
-
-                                    BluetoothGatt.STATE_DISCONNECTED -> {
-                                        log.info("Someone disconnected.")
-
-                                        if (cont.context.isActive) {
-                                            log.info("Context is still active.")
-                                            removeListener(disconnectKey)
-
-                                            log.info("Canceling send and receive.")
-
-                                            cont.resume(null)
-                                            coroutineContext.cancel()
-                                            sendAndReceive.cancel()
-                                        }
-                                    }
-                                }
-                            }
-                        })
-                    }.await()
-
-                    if (status.error != null) {
+                        log.info("Have read entire server response packet.")
+                        removeListener(disconnectKey)
+                        cont.resume(valueIn)
+                    } else {
+                        log.info("Error sending entire packet to the server.")
+                        removeListener(disconnectKey)
                         cont.resume(null)
                     }
                 }
+
+                // add the disconnect listener
+                log.info("Adding disconnect listener.")
+                addListener(disconnectKey, object : XYBluetoothDevice.Listener() {
+                    override fun connectionStateChanged(device: XYBluetoothDevice, newState: Int) {
+                        when (newState) {
+
+                            BluetoothGatt.STATE_DISCONNECTED -> {
+                                log.info("Someone disconnected.")
+
+                                if (cont.context.isActive) {
+                                    log.info("Context is still active.")
+                                    removeListener(disconnectKey)
+
+                                    log.info("Canceling send and receive.")
+
+                                    cont.resume(null)
+                                    coroutineContext.cancel()
+                                    sendAndReceive.cancel()
+                                }
+                            }
+                        }
+                    }
+                })
             }
         }
     }
@@ -286,8 +277,8 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
      */
     private fun sendPacket(outgoingPacket: ByteArray): Deferred<XYBluetoothError?> = GlobalScope.async {
         return@async suspendCoroutine<XYBluetoothError?> { cont ->
-            thread {
-                GlobalScope.launch {
+            GlobalScope.launch {
+                val result = connection {
                     val chunknedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket)
 
                     while (chunknedOutgoingPacket.canSendNext) {
@@ -295,13 +286,14 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
                         val error = findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, test).await().error
 
                         if (error != null) {
-                            cont.resume(error)
-                            return@launch
+                            return@connection XYBluetoothResult<Any?>(null, error)
                         }
                     }
 
-                    cont.resume(null)
-                }
+                    return@connection XYBluetoothResult<Any?>(null)
+                }.await()
+
+                cont.resume(result.error)
             }
         }
     }
@@ -319,25 +311,25 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
         return@async suspendCoroutine<ByteArray?> { cont ->
             val key = this.toString() + Math.random().toString()
 
-            addGattListener(key, object : XYBluetoothGattCallback() {
+            centralCallback.addListener(key, object : XYBluetoothGattCallback() {
                 var numberOfPackets = 0
                 var hasResumed = false
 
                 var timeoutJob : Job = GlobalScope.launch {
                     delay(FIRST_NOTIFY_TIMEOUT.toLong())
                     hasResumed = true
-                    removeGattListener(key)
+                    centralCallback.removeListener(key)
                     cont.resume(null)
                 }
 
                 var incomingPacket : XyoBluetoothIncomingPacket? = null
 
                 @Synchronized
-                override fun onCharacteristicChangedValue(gatt: BluetoothGatt?, characteristicToRead: BluetoothGattCharacteristic?, value: ByteArray?) {
-                    super.onCharacteristicChangedValue(gatt, characteristicToRead, value)
-                    Log.v("NATE", "RECIVED NOTIFY ${value?.toHexString()}")
+                override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
+                    super.onCharacteristicChanged(gatt, characteristic)
+                    val value = characteristic?.value
 
-                    if (characteristicToRead?.uuid == XyoUuids.XYO_WRITE && !hasResumed) {
+                    if (characteristic?.uuid == XyoUuids.XYO_WRITE && !hasResumed) {
 
                         if (numberOfPackets == 0 && value != null) {
                             incomingPacket = XyoBluetoothIncomingPacket(value)
@@ -347,7 +339,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
 
                         if (incomingPacket?.done == true) {
                             hasResumed = true
-                            removeGattListener(key)
+                            centralCallback.removeListener(key)
                             timeoutJob.cancel()
                             cont.resume(incomingPacket?.getCurrentBuffer())
                         } else {
@@ -355,7 +347,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
                             timeoutJob = GlobalScope.launch {
                                 delay(NOTIFY_TIMEOUT.toLong())
                                 hasResumed = true
-                                removeGattListener(key)
+                                centralCallback.removeListener(key)
                                 cont.resume(null)
                             }
                         }
@@ -390,16 +382,15 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
             }
         }
 
-        override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<Int, XYBluetoothDevice>, foundDevices: HashMap<Int, XYBluetoothDevice>) {
+        override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
             val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode()
 
-            if (!foundDevices.containsKey(hash) && !globalDevices.contains(hash) && hash != null) {
+            if (!foundDevices.containsKey(hash.toString()) && !globalDevices.contains(hash) && hash != null) {
                 val createdDevice = XyoBluetoothClient(context, scanResult, hash)
 
-                foundDevices[hash] = createdDevice
-                globalDevices[hash] = createdDevice
+                foundDevices[hash.toString()] = createdDevice
+                globalDevices[hash.toString()] = createdDevice
             }
-
         }
     }
 }

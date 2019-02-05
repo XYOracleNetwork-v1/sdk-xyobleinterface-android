@@ -31,9 +31,9 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         )
 
         advertiser.advertisingData = advertiseData
-        advertiser.changeContactable(false) // set this to false for iBeacon
-        advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_LOW_LATENCY)
-        advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_HIGH)
+        advertiser.changeContactable(true)
+        advertiser.changeAdvertisingMode(AdvertiseSettings.ADVERTISE_MODE_BALANCED)
+        advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
     }
 
     /**

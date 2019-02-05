@@ -2,9 +2,9 @@ package network.xyo.modbluetoothkotlin.server
 
 import android.bluetooth.*
 import kotlinx.coroutines.*
-import network.xyo.ble.gatt.XYBluetoothError
-import network.xyo.ble.gatt.XYBluetoothResult
 import network.xyo.ble.gatt.XYGattStatus
+import network.xyo.ble.gatt.peripheral.XYBluetoothError
+import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.gatt.server.XYBluetoothCharacteristic
 import network.xyo.ble.gatt.server.XYBluetoothDescriptor
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
@@ -323,7 +323,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
      *
      * @return A deferred XYGattStatus with the status of the service being added.
      */
-    fun spinUpServer () : Deferred<XYBluetoothResult<XYGattStatus>> = GlobalScope.async {
+    fun spinUpServer () : Deferred<XYBluetoothResult<XYGattStatus>?> = GlobalScope.async {
         bluetoothWriteCharacteristic.addDescriptor(notifyDescriptor)
         bluetoothService.addCharacteristic(bluetoothWriteCharacteristic)
         bluetoothServer.startServer()
