@@ -21,7 +21,6 @@ import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
-import kotlin.concurrent.thread
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 
@@ -112,6 +111,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
         // check if the packet was read successfully
         if (incomingPacket != null) {
             log.info("Read the server's response (good).")
+            setStayConnected(true)
             return@async createPipeFromResponse(incomingPacket)
         } else {
             disconnect()
@@ -324,7 +324,6 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
 
                 var incomingPacket : XyoBluetoothIncomingPacket? = null
 
-                @Synchronized
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     super.onCharacteristicChanged(gatt, characteristic)
                     val value = characteristic?.value
@@ -360,10 +359,9 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
     }
 
 
-
     companion object : XYCreator() {
-        const val FIRST_NOTIFY_TIMEOUT = 30_000
-        const val NOTIFY_TIMEOUT = 20_000
+        const val FIRST_NOTIFY_TIMEOUT = 6_000
+        const val NOTIFY_TIMEOUT = 5_000
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 23
 
