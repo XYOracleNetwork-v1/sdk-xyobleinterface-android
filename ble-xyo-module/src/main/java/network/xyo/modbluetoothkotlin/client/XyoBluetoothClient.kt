@@ -381,9 +381,9 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
         }
 
         override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
-            val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode()
+            val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode() ?: 0
 
-            if (!foundDevices.containsKey(hash.toString()) && !globalDevices.contains(hash) && hash != null) {
+            if (!foundDevices.containsKey(hash.toString()) && !globalDevices.contains(hash)) {
                 val createdDevice = XyoBluetoothClient(context, scanResult, hash)
 
                 foundDevices[hash.toString()] = createdDevice

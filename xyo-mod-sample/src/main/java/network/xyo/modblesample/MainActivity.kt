@@ -97,7 +97,7 @@ class MainActivity : Activity() {
         return XyoBluetoothAdvertiser(
                 Random().nextInt(Short.MAX_VALUE + 1).toShort(),
                 Random().nextInt(Short.MAX_VALUE + 1).toShort(),
-                XYBluetoothAdvertiser(this, null))
+                XYBluetoothAdvertiser(this))
     }
 
     /**
@@ -190,7 +190,7 @@ class MainActivity : Activity() {
         XyoBluetoothClient.enable(true)
         XYIBeaconBluetoothDevice.enable(true)
         scanner = createNewScanner()
-        scanner.start()
+        scanner.start().await()
         clientFinder = XyoBluetoothClientCreator(scanner)
     }
 
@@ -230,6 +230,8 @@ class MainActivity : Activity() {
 
                 override fun onCreated(pipe: XyoNetworkPipe) {
                     GlobalScope.launch {
+
+
                         node.tryBoundWitnessPipe(pipe)
                     }
                 }
