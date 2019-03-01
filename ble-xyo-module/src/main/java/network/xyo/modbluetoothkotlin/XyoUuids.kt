@@ -9,13 +9,26 @@ object XyoUuids {
     /**
      * The primary GATT service that will be advertised.
      */
-    // d684352e-df36-484e-bc98-2d5398c5593e
     val XYO_SERVICE = UUID.fromString("d684352e-df36-484e-bc98-2d5398c5593e")!!
 
     /**
-     * The GATT characteristic to be written to. This will be in the XYO_SERVICE.
+     * The GATT characteristic to be written to when creating pipes. This will be in the XYO_SERVICE.
      */
     val XYO_WRITE = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456490b2d")!!
 
-    val NOTIFY_DESCREPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")!!
+    /**
+     * The password GATT characteristic to write to when changing the password.
+     */
+    val XYO_PIN = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456500b2d")!!
+
+    /**
+     * The password bound witness data characteristic characteristic to be written to.
+     */
+    val XYO_BW = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456510b2d")!!
+
+    /**
+     * The descriptor to use when to manage subscribing to notifications.
+     */
+    val NOTIFY_DESCRIPTOR = UUID.fromString("00002902-0000-1000-8000-00805f9b34fb")!!
 }
+

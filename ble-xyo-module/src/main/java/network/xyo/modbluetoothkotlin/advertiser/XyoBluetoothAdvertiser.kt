@@ -41,7 +41,7 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         ).build()
 
         val responseData = AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
+                .setIncludeDeviceName(false)
                 .addServiceUuid(ParcelUuid(XyoUuids.XYO_SERVICE))
                 .build()
 

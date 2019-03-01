@@ -1,7 +1,6 @@
 package network.xyo.modbluetoothkotlin.server
 
 import android.bluetooth.*
-import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.peripheral.XYBluetoothResult
@@ -13,13 +12,12 @@ import network.xyo.ble.gatt.server.responders.XYBluetoothWriteResponder
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
 import network.xyo.modbluetoothkotlin.XyoUuids
-import network.xyo.modbluetoothkotlin.XyoUuids.NOTIFY_DESCREPTOR
+import network.xyo.modbluetoothkotlin.XyoUuids.NOTIFY_DESCRIPTOR
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import kotlin.coroutines.resume
 
 /**
@@ -191,6 +189,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
                         val readValue = readValueJob.await()
                         bluetoothServer.removeListener(disconnectKey)
+
                         cont.resume(readValue)
                     }
                 }
@@ -245,14 +244,19 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
             cont.resume(null)
         }
 
-        val outgoingChuckedPacket = XyoBluetoothOutgoingPacket((mtuS[bluetoothDevice.hashCode()] ?: 24) - 4, outgoingPacket)
+        val outgoingChuckedPacket = XyoBluetoothOutgoingPacket((mtuS[bluetoothDevice.hashCode()] ?: 24) - 4, outgoingPacket, 4)
 
 
         GlobalScope.launch {
             while (outgoingChuckedPacket.canSendNext) {
-                characteristic.value = outgoingChuckedPacket.getNext()
+                val next = outgoingChuckedPacket.getNext()
+                characteristic.value = next
                 delay(ADVERTISEMENT_DELTA_TIMEOUT.toLong())
-                bluetoothServer.sendNotification(bluetoothWriteCharacteristic, true, bluetoothDevice).await()
+
+                if (bluetoothServer.sendNotification(bluetoothWriteCharacteristic, true, bluetoothDevice).await()?.value != 0) {
+                    timeoutResume.cancel()
+                    cont.resume(null)
+                }
 
                 if (!outgoingChuckedPacket.canSendNext) {
                     timeoutResume.cancel()
@@ -365,7 +369,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         const val READ_TIMEOUT = 12_000
         const val ADVERTISEMENT_DELTA_TIMEOUT = 100
 
-        private val notifyDescriptor = object : XYBluetoothDescriptor(NOTIFY_DESCREPTOR, BluetoothGattDescriptor.PERMISSION_WRITE) {
+        private val notifyDescriptor = object : XYBluetoothDescriptor(NOTIFY_DESCRIPTOR, BluetoothGattDescriptor.PERMISSION_WRITE) {
             override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
                 return true
             }

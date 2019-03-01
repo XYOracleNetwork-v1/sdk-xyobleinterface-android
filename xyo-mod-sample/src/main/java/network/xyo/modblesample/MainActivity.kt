@@ -31,6 +31,8 @@ import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
 import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
+import network.xyo.sdkcorekotlin.crypto.signing.stub.XyoStubSigner
+import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.heuristics.XyoHeuristicGetter
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
@@ -113,9 +115,13 @@ class MainActivity : Activity() {
      * The node being used to do bound witnesses, please note that the state of the node will not persist after
      * the activity reloads.
      */
-    private val node = object : XyoOriginChainCreator(XyoInMemoryStorageProvider(), XyoSha3) {
+    private val node = object : XyoOriginChainCreator(XyoInMemoryStorageProvider(), XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")) {
         override fun getChoice(catalog: Int, strict: Boolean): Int {
             return 1
+        }
+
+        init {
+            this.originState.addSigner(XyoStubSigner())
         }
 
         /**
@@ -159,8 +165,9 @@ class MainActivity : Activity() {
         override fun onGranted() {
             initScanner()
             initAdapter()
-            initServer()
+           initServer()
             initRefreshListener()
+            XyoBluetoothClient.enable(true)
         }
     }
 
