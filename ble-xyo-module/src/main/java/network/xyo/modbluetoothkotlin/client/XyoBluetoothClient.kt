@@ -3,6 +3,7 @@ package network.xyo.modbluetoothkotlin.client
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
@@ -320,8 +321,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
                 val chunknedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
 
                 while (chunknedOutgoingPacket.canSendNext) {
-                    val test = chunknedOutgoingPacket.getNext()
-                    val error = findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, test).await().error
+                    val error = findAndWriteCharacteristic(service, characteristic, chunknedOutgoingPacket.getNext()).await().error
                     if (error != null) {
                         cont.resume(error)
                         return@launch
@@ -362,7 +362,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     super.onCharacteristicChanged(gatt, characteristic)
                     val value = characteristic?.value
-
+                    
                     if (characteristic?.uuid == XyoUuids.XYO_WRITE && !hasResumed) {
 
                         if (numberOfPackets == 0 && value != null) {
