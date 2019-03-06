@@ -165,7 +165,7 @@ class MainActivity : Activity() {
         override fun onGranted() {
             initScanner()
             initAdapter()
-           initServer()
+            initServer()
             initRefreshListener()
             XyoBluetoothClient.enable(true)
         }

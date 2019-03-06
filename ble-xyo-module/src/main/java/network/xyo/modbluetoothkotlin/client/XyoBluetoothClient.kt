@@ -36,7 +36,7 @@ import kotlin.coroutines.suspendCoroutine
  * @property device The android bluetooth device
  * @property hash The unique hash of the device
  */
-class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int) : XYIBeaconBluetoothDevice(context, scanResult, hash.toString()) {
+open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int) : XYIBeaconBluetoothDevice(context, scanResult, hash.toString()) {
     /**
      * The standard size of the MTU of the connection. This value is used when chunking large amounts of data.
      */
@@ -270,42 +270,6 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
     }
 
     /**
-     * Changes the password on the remote device if the current password is correct.
-     *
-     * @param password The password of the device now.
-     * @param newPassword The password to change on the remote device.
-     * @return An XYBluetoothError if there was an issue writing the packet.
-     */
-    fun changePassword (password: ByteArray, newPassword: ByteArray) : Deferred<XYBluetoothError?> {
-        val encoded = ByteBuffer.allocate(2 + password.size + newPassword.size)
-                .put((password.size + 1).toByte())
-                .put(password)
-                .put((newPassword.size + 1).toByte())
-                .put(newPassword)
-                .array()
-
-        return chunkSend(encoded, XyoUuids.XYO_PIN, XyoUuids.XYO_SERVICE, 1)
-    }
-
-    /**
-     * Changes the bound witness data on the remote device
-     *
-     * @param boundWitnessData The data to include in tche remote devices bound witness.
-     * @param password The password of the device to so it can write the boundWitnessData
-     * @return An XYBluetoothError if there was an issue writing the packet.
-     */
-    fun changeBoundWitnessData (password: ByteArray, boundWitnessData: ByteArray) : Deferred<XYBluetoothError?> {
-        val encoded = ByteBuffer.allocate(3 + password.size + boundWitnessData.size)
-                .put((password.size + 1).toByte())
-                .put(password)
-                .putShort((boundWitnessData.size + 2).toShort())
-                .put(boundWitnessData)
-                .array()
-
-        return chunkSend(encoded, XyoUuids.XYO_BW, XyoUuids.XYO_SERVICE, 4)
-    }
-
-    /**
      * Preforms a chunk send
      *
      * @param outgoingPacket The packet to send to the server. This value will be chunked accordingly, if larger than
@@ -315,7 +279,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
      * @param sizeOfSize size of the packet header size to send
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    private fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): Deferred<XYBluetoothError?> = GlobalScope.async {
+    protected fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): Deferred<XYBluetoothError?> = GlobalScope.async {
         return@async suspendCoroutine<XYBluetoothError?> { cont ->
             GlobalScope.launch {
                 val chunknedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
@@ -362,7 +326,7 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     super.onCharacteristicChanged(gatt, characteristic)
                     val value = characteristic?.value
-                    
+
                     if (characteristic?.uuid == XyoUuids.XYO_WRITE && !hasResumed) {
 
                         if (numberOfPackets == 0 && value != null) {
@@ -400,6 +364,8 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 23
 
+        val xyoManufactorIdToCreator = HashMap<Byte, XYCreator>()
+
         /**
          * Enable this device to be created on scan.
          *
@@ -419,8 +385,18 @@ class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int)
             val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode() ?: 0
 
             if (!foundDevices.containsKey(hash.toString()) && !globalDevices.contains(hash)) {
-                val createdDevice = XyoBluetoothClient(context, scanResult, hash)
+                val ad = scanResult.scanRecord?.getManufacturerSpecificData(0x4c)
 
+                if (ad?.size == 23) {
+                    val id = ad[21]
+
+                    if (xyoManufactorIdToCreator.containsKey(id)) {
+                        xyoManufactorIdToCreator[id]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
+                        return
+                    }
+                }
+
+                val createdDevice = XyoBluetoothClient(context, scanResult, hash)
                 foundDevices[hash.toString()] = createdDevice
                 globalDevices[hash.toString()] = createdDevice
             }
