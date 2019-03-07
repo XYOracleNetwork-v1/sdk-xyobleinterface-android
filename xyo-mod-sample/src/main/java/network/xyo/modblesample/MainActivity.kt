@@ -31,6 +31,7 @@ import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
 import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
+import network.xyo.modbluetoothkotlin.client.XyoSentinelX
 import network.xyo.sdkcorekotlin.crypto.signing.stub.XyoStubSigner
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
@@ -168,6 +169,7 @@ class MainActivity : Activity() {
             initServer()
             initRefreshListener()
             XyoBluetoothClient.enable(true)
+            XyoSentinelX.enable(true)
         }
     }
 

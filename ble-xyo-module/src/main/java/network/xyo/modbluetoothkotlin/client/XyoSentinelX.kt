@@ -17,7 +17,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
         val iBeaconData = scanResult.scanRecord?.getManufacturerSpecificData(0x4c) ?: return true
 
         if (iBeaconData.size == 23) {
-            val flags = iBeaconData[22]
+            val flags = iBeaconData[21]
             return flags != 0.toByte()
         }
 

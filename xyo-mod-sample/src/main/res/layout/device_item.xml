@@ -40,6 +40,28 @@
                     android:paddingBottom="20dp"
                     android:textSize="12sp" />
 
+            <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_below="@+id/tx_mac"
+                    android:id="@+id/tx_type_of_device"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="20dp"
+                    android:textSize="12sp" />
+
+            <LinearLayout
+                    android:layout_below="@+id/tx_type_of_device"
+                    android:id="@+id/ll_properties"
+                    android:layout_width="wrap_content"
+                    android:orientation="vertical"
+                    android:paddingStart="20dp"
+                    android:paddingEnd="20dp"
+                    android:paddingBottom="20dp"
+                    android:layout_height="wrap_content">
+
+            </LinearLayout>
+
             <Button
                     android:layout_width="wrap_content"
                     android:layout_alignParentEnd="true"

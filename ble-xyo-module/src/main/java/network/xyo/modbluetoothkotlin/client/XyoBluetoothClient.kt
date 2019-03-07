@@ -359,8 +359,8 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
 
     companion object : XYCreator() {
-        const val FIRST_NOTIFY_TIMEOUT = 6_000
-        const val NOTIFY_TIMEOUT = 5_000
+        const val FIRST_NOTIFY_TIMEOUT = 60_000
+        const val NOTIFY_TIMEOUT = 30_000
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 23
 
@@ -388,7 +388,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                 val ad = scanResult.scanRecord?.getManufacturerSpecificData(0x4c)
 
                 if (ad?.size == 23) {
-                    val id = ad[21]
+                    val id = ad[19]
 
                     if (xyoManufactorIdToCreator.containsKey(id)) {
                         xyoManufactorIdToCreator[id]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)

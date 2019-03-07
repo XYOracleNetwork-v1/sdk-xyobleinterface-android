@@ -4,11 +4,13 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
+import android.widget.LinearLayout
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.modblesample.R
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
+import network.xyo.modbluetoothkotlin.client.XyoSentinelX
 
 /**
  * The Recycler View adapter for the list of nearby devices.
@@ -19,21 +21,39 @@ class DeviceAdapter (private val listener : XYServiceListAdapterListener?) : Rec
     private var list: ArrayList<XYBluetoothDevice> = arrayListOf()
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
+        holder.properties.removeAllViews()
         holder.name.text = list[position].name ?: "Unknown"
         holder.mac.text = list[position].address
+        holder.typeOfDevice.text = list[position].javaClass.simpleName
+
+        for (property in getProperties(list[position])) {
+            val view = TextView(holder.itemView.context)
+            view.text = property
+            view.layoutParams = LinearLayout.LayoutParams(
+                    LinearLayout.LayoutParams.WRAP_CONTENT,
+                    LinearLayout.LayoutParams.WRAP_CONTENT)
+            holder.properties.addView(view)
+        }
 
         if (list[position] is XyoBluetoothClient) {
-            holder.bwButton.isEnabled = true
+            holder.boundWitnessButton.isEnabled = true
 
-            holder.bwButton.setOnClickListener {
+            holder.boundWitnessButton.setOnClickListener {
                 listener?.onClick(list[position])
             }
 
             return
         }
 
-        holder.bwButton.isEnabled = false
+        holder.boundWitnessButton.isEnabled = false
+    }
 
+    private fun getProperties (device: XYBluetoothDevice) : Array<String> {
+        if (device is XyoSentinelX) {
+            return arrayOf("Claimed: ${device.isClaimed()}")
+        }
+
+        return arrayOf()
     }
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): ViewHolder {
@@ -90,7 +110,9 @@ class DeviceAdapter (private val listener : XYServiceListAdapterListener?) : Rec
     class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val name : TextView = itemView.findViewById(R.id.tx_device_name)
         val mac : TextView = itemView.findViewById(R.id.tx_mac)
-        val bwButton : Button = itemView.findViewById(R.id.btn_bw)
+        val boundWitnessButton : Button = itemView.findViewById(R.id.btn_bw)
+        val typeOfDevice : TextView = itemView.findViewById(R.id.tx_type_of_device)
+        val properties : LinearLayout = itemView.findViewById(R.id.ll_properties)
     }
 
     interface XYServiceListAdapterListener {
