@@ -138,18 +138,18 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
      */
     private fun checkDevice(device: XyoBluetoothClient, procedureCatalogue: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
         gettingDevice = true
-        log.info("Device is XyoBluetoothClient : ${device.address}")
+//        log.info("Device is XyoBluetoothClient : ${device.address}")
 
         val pipe = device.createPipe(procedureCatalogue).await()
 
         if (pipe != null) {
-            log.info("Created pipe : ${device.address}")
+//            log.info("Created pipe : ${device.address}")
             // gettingDevice = false
             return@async pipe
         }
 
-        log.info("Could not create pipe : ${device.address}")
-        log.info("Device is not XyoBluetoothClient : ${device.address}")
+//        log.info("Could not create pipe : ${device.address}")
+//        log.info("Device is not XyoBluetoothClient : ${device.address}")
         gettingDevice = false
         return@async null
     }

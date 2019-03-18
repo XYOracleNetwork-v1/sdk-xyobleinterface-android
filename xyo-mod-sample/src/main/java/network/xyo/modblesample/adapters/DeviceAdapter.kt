@@ -13,11 +13,11 @@ import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 import network.xyo.modbluetoothkotlin.client.XyoSentinelX
 
 /**
- * The Recycler View adapter for the list of nearby devices.
+ * The Recycler View adapter for the list of nearby deviceAdapter.
  *
  * @param listener The listener for on bw click events.
  */
-class DeviceAdapter (private val listener : XYServiceListAdapterListener?) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
+class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
     private var list: ArrayList<XYBluetoothDevice> = arrayListOf()
 
     override fun onBindViewHolder(holder: ViewHolder, position: Int) {
@@ -68,7 +68,7 @@ class DeviceAdapter (private val listener : XYServiceListAdapterListener?) : Rec
     /**
      * Gets the list of current items in the list
      *
-     * @return The list of devices
+     * @return The list of deviceAdapter
      */
     fun getList(): ArrayList<XYBluetoothDevice> {
         return list

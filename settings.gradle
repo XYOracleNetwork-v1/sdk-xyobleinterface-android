@@ -1,4 +1,3 @@
 include ':xyo-mod-sample', ':ble-xyo-module'
-//
-include ':ble-android-library'
-project(':ble-android-library').projectDir = new File('../sdk-ble-android/ble-android-library')
+//include ':ble-android-library'
+//project(':ble-android-library').projectDir = new File('../sdk-ble-android/ble-android-library')

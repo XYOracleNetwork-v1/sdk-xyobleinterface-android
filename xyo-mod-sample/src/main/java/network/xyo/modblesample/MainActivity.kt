@@ -1,15 +1,15 @@
 package network.xyo.modblesample
 
-import android.app.Activity
+
 import android.os.Bundle
 import android.view.View
-import androidx.recyclerview.widget.LinearLayoutManager
-import androidx.recyclerview.widget.RecyclerView
+import androidx.fragment.app.FragmentActivity
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
 import kotlinx.android.synthetic.main.activity_main.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
+import network.xyo.modblesample.R
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
@@ -20,14 +20,13 @@ import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClientCreator
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
-import network.xyo.sdkcorekotlin.hashing.XyoSha3
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.node.XyoOriginChainCreator
 import network.xyo.sdkcorekotlin.node.XyoNodeListener
 import network.xyo.sdkcorekotlin.persist.XyoInMemoryStorageProvider
 import java.nio.ByteBuffer
-import kotlin.concurrent.thread
 import network.xyo.modblesample.adapters.DeviceAdapter
+import network.xyo.modblesample.fragments.XyoDevicesFragment
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
 import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
@@ -43,11 +42,11 @@ import java.util.*
 
 /**
  * The main activity of the sample application to test the functionality of mod-ble-android. This app should be able
- * to do bound witnesses over bluetooth with other XYO Enabled devices. Including other instances of this app. This
+ * to do bound witnesses over bluetooth with other XYO Enabled deviceAdapter. Including other instances of this app. This
  * app is not recommended to be used as a production XYO Enabled Device but rather a tool for development because
  * that state of the node will not persist.
  */
-class MainActivity : Activity() {
+class MainActivity : FragmentActivity() {
     private lateinit var clientFinder: XyoBluetoothClientCreator
     private lateinit var scanner: XYSmartScanModern
     private lateinit var deviceList: DeviceAdapter
@@ -62,12 +61,6 @@ class MainActivity : Activity() {
     private fun hideProgressBar () = runOnUiThread {
         pb_container.visibility = View.GONE
     }
-
-    /**
-     * All of the devices in range to add to the recycler view.
-     */
-    private val devices: Array<XYBluetoothDevice>
-        get() = scanner.devices.values.toTypedArray()
 
     /**
      * The catalogue of the node to advertise with.
@@ -148,53 +141,28 @@ class MainActivity : Activity() {
     }
 
     override fun onCreate(savedInstanceState: Bundle?) {
-
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
         requestBluetooth(bluetoothPermissionHandler)
+        showDevicesFragment()
     }
 
 
 
     private val bluetoothPermissionHandler = object : PermissionHandler() {
-
-        /**
-         * todo handle bluetooth deny
-         * This will be called after the bluetooth
-         */
         override fun onGranted() {
             initScanner()
-            initAdapter()
             initServer()
-            initRefreshListener()
             XyoBluetoothClient.enable(true)
             XyoSentinelX.enable(true)
         }
     }
 
-    /**
-     * Request Necessary Bluetooth Permissions
-     *
-     * @param handler The callback to call after the permissions have been sorted out.
-     */
     private fun requestBluetooth (handler : PermissionHandler) {
         Permissions.check(this, android.Manifest.permission.ACCESS_COARSE_LOCATION, "Need it.", handler)
     }
 
-    /**
-     * Create the refresh listener so that  devices can be seen.
-     */
-    private fun initRefreshListener () {
-        sw_devices.setOnRefreshListener {
-            deviceList.setItems(devices)
-            sw_devices.isRefreshing = false
-        }
-    }
-
-    /**
-     * Init the Bluetooth Scanner, this will set the member scanner object, and will start the scanner.
-     */
     private fun initScanner () = GlobalScope.launch {
         XyoBluetoothClient.enable(true)
         XYIBeaconBluetoothDevice.enable(true)
@@ -203,9 +171,20 @@ class MainActivity : Activity() {
         clientFinder = XyoBluetoothClientCreator(scanner)
     }
 
-    /**
-     * Init the Bluetooth Server, this will set the member server object, and start the server.
-     */
+    private val deviceHandler = object : XyoDevicesFragment.XyoDevicesFragmentHandler {
+        override fun getDevices(): Array<XYBluetoothDevice> {
+            return scanner.devices.values.toTypedArray()
+        }
+    }
+
+    private fun showDevicesFragment () {
+        val trans = supportFragmentManager.beginTransaction()
+        val frag = XyoDevicesFragment()
+        frag.deviceHandler = deviceHandler
+        trans.add(R.id.fragment_root, frag)
+        trans.commit()
+    }
+
     private fun initServer () = GlobalScope.launch {
         server = createNewServer()
         server.spinUpServer().await()
@@ -214,17 +193,6 @@ class MainActivity : Activity() {
         advertiser = createNewAdvertiser()
         advertiser.configureAdvertiser()
         advertiser.startAdvertiser().await()
-    }
-
-    /**
-     * Mount the Recycler View to the Main Activity.
-     */
-    private fun initAdapter () {
-        val adapterView = findViewById<RecyclerView>(R.id.rv_device_list)
-        val layoutManager = LinearLayoutManager(this, RecyclerView.VERTICAL, false)
-        deviceList = DeviceAdapter(onDeviceTry)
-        adapterView.layoutManager = layoutManager
-        adapterView.adapter = deviceList
     }
 
     private val serverListener = object : XyoBluetoothPipeCreatorListener {
@@ -250,30 +218,28 @@ class MainActivity : Activity() {
 
     private val onDeviceTry = object : DeviceAdapter.XYServiceListAdapterListener {
         override fun onClick(device: XYBluetoothDevice) {
-            thread {
-                GlobalScope.launch {
-                    if (device is XyoBluetoothClient) {
-                        showProgressBar()
+            GlobalScope.launch {
+                if (device is XyoBluetoothClient) {
+                    showProgressBar()
 
-                        GlobalScope.launch {
-                            val pipe = device.createPipe(boundWitnessCatalogue).await() as? XyoBluetoothClient.XyoBluetoothClientPipe
+                    GlobalScope.launch {
+                        val pipe = device.createPipe(boundWitnessCatalogue).await() as? XyoBluetoothClient.XyoBluetoothClientPipe
 
-                            if (pipe != null) {
-                                node.addHeuristic("rssi", object : XyoHeuristicGetter {
-                                    override fun getHeuristic(): XyoBuff? {
-                                        val rssi = pipe.rssi?.toByte() ?: return null
+                        if (pipe != null) {
+                            node.addHeuristic("rssi", object : XyoHeuristicGetter {
+                                override fun getHeuristic(): XyoBuff? {
+                                    val rssi = pipe.rssi?.toByte() ?: return null
 
-                                        return XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi))
-                                    }
-                                })
+                                    return XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi))
+                                }
+                            })
 
-                                node.tryBoundWitnessPipe(pipe)
+                            node.tryBoundWitnessPipe(pipe)
 
-                                node.removeHeuristic("rssi")
+                            node.removeHeuristic("rssi")
 
-                            } else {
-                               hideProgressBar()
-                            }
+                        } else {
+                           hideProgressBar()
                         }
                     }
                 }

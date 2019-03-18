@@ -26,21 +26,9 @@
 
     </RelativeLayout>
 
-
-
-    <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/sw_devices"
+    <FrameLayout
             android:layout_width="match_parent"
-            android:layout_height="match_parent">
-
-        <androidx.recyclerview.widget.RecyclerView
-                android:layout_width="match_parent"
-                android:id="@+id/rv_device_list"
-                android:layout_below="@+id/btn_refresh_devices"
-                android:layout_height="match_parent" />
-
-    </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
-
-
+            android:layout_height="match_parent"
+            android:id="@+id/fragment_root"/>
 
 </RelativeLayout>

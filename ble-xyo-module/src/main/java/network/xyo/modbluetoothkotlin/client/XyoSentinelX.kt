@@ -6,22 +6,57 @@ import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
+import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import java.nio.ByteBuffer
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.experimental.and
 
 open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, hash : Int) : XyoBluetoothClient(context, scanResult, hash) {
+    private val sentinelListeners = HashMap<String, Listener>()
+
+    fun addButtonListener (key : String, listener : Listener) {
+        sentinelListeners[key] = listener
+    }
+
+    fun removeButtonListener (key: String) {
+        sentinelListeners.remove(key)
+    }
 
     fun isClaimed () : Boolean {
         val iBeaconData = scanResult.scanRecord?.getManufacturerSpecificData(0x4c) ?: return true
 
         if (iBeaconData.size == 23) {
             val flags = iBeaconData[21]
-            return flags != 0.toByte()
+            return flags and 1.toByte() != 0.toByte()
         }
 
         return true
+    }
+
+    private fun isButtonPressed (scanResult: XYScanResult) : Boolean {
+        val iBeaconData = scanResult.scanRecord?.getManufacturerSpecificData(0x4c) ?: return true
+
+        if (iBeaconData.size == 23) {
+            val flags = iBeaconData[21]
+            return flags and 2.toByte() != 0.toByte()
+        }
+
+        return false
+    }
+
+    override fun onDetect(scanResult: XYScanResult?) {
+        if (scanResult != null && isButtonPressed(scanResult)) {
+            // button of sentinel x is pressed
+            for ((_, l) in this.sentinelListeners) {
+                l.onButtonPressed()
+            }
+
+            return
+        }
+
+        return
     }
 
     /**
@@ -60,7 +95,15 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
         return chunkSend(encoded, XyoUuids.XYO_BW, XyoUuids.XYO_SERVICE, 4)
     }
 
+    fun getBoundWitnessData () : Deferred<XYBluetoothResult<ByteArray>> {
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_BW)
+    }
+
     companion object : XYCreator() {
+
+        open class Listener {
+            open fun onButtonPressed () {}
+        }
 
         fun enable (enable : Boolean) {
             if (enable) {
