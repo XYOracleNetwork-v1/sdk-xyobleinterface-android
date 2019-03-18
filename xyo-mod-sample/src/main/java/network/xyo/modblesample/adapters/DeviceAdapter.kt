@@ -1,11 +1,13 @@
 package network.xyo.modblesample.adapters
 
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.Button
 import android.widget.LinearLayout
 import android.widget.TextView
+import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.modblesample.R
@@ -29,23 +31,16 @@ class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerVie
         for (property in getProperties(list[position])) {
             val view = TextView(holder.itemView.context)
             view.text = property
+            view.setTextColor(Color.parseColor("#ffffff"))
             view.layoutParams = LinearLayout.LayoutParams(
                     LinearLayout.LayoutParams.WRAP_CONTENT,
                     LinearLayout.LayoutParams.WRAP_CONTENT)
             holder.properties.addView(view)
         }
 
-        if (list[position] is XyoBluetoothClient) {
-            holder.boundWitnessButton.isEnabled = true
-
-            holder.boundWitnessButton.setOnClickListener {
-                listener?.onClick(list[position])
-            }
-
-            return
+        holder.card.setOnClickListener {
+            listener?.onClick(list[position])
         }
-
-        holder.boundWitnessButton.isEnabled = false
     }
 
     private fun getProperties (device: XYBluetoothDevice) : Array<String> {
@@ -65,30 +60,15 @@ class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerVie
         return list.size
     }
 
-    /**
-     * Gets the list of current items in the list
-     *
-     * @return The list of deviceAdapter
-     */
     fun getList(): ArrayList<XYBluetoothDevice> {
         return list
     }
 
-    /**
-     * Adds an item to the list
-     *
-     * @param item The item to add
-     */
     fun addItem(item: XyoBluetoothClient) {
         list.add(item)
         notifyDataSetChanged()
     }
 
-    /**
-     * Adda a group of items to the list at once.
-     *
-     * @param items The list of items to add.
-     */
     fun addItems (items : Array<XYBluetoothDevice>) {
         for (item in items) {
             list.add(item)
@@ -97,11 +77,6 @@ class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerVie
         notifyDataSetChanged()
     }
 
-    /**
-     * Changes ALL of the items in the list.
-     *
-     * @param items The items to add.
-     */
     fun setItems (items : Array<XYBluetoothDevice>) {
         list =  ArrayList(items.toList())
         notifyDataSetChanged()
@@ -110,9 +85,9 @@ class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerVie
     class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val name : TextView = itemView.findViewById(R.id.tx_device_name)
         val mac : TextView = itemView.findViewById(R.id.tx_mac)
-        val boundWitnessButton : Button = itemView.findViewById(R.id.btn_bw)
         val typeOfDevice : TextView = itemView.findViewById(R.id.tx_type_of_device)
         val properties : LinearLayout = itemView.findViewById(R.id.ll_properties)
+        val card : CardView = itemView.findViewById(R.id.cv_device)
     }
 
     interface XYServiceListAdapterListener {

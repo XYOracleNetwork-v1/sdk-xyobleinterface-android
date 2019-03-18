@@ -10,11 +10,13 @@ import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import java.nio.ByteBuffer
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
 open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, hash : Int) : XyoBluetoothClient(context, scanResult, hash) {
     private val sentinelListeners = HashMap<String, Listener>()
+    private var lastButtonPressTime : Long = 0
 
     fun addButtonListener (key : String, listener : Listener) {
         sentinelListeners[key] = listener
@@ -47,8 +49,9 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
     }
 
     override fun onDetect(scanResult: XYScanResult?) {
-        if (scanResult != null && isButtonPressed(scanResult)) {
+        if (scanResult != null && isButtonPressed(scanResult) && lastButtonPressTime < System.currentTimeMillis() - 11_000) {
             // button of sentinel x is pressed
+            lastButtonPressTime = System.currentTimeMillis()
             for ((_, l) in this.sentinelListeners) {
                 l.onButtonPressed()
             }
@@ -114,7 +117,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
         }
 
         override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
-            val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode() ?: 0
+            val hash = scanResult.device?.address.hashCode()
             val createdDevice = XyoSentinelX(context, scanResult, hash)
             foundDevices[hash.toString()] = createdDevice
             globalDevices[hash.toString()] = createdDevice
