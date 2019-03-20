@@ -3,9 +3,7 @@ package network.xyo.modbluetoothkotlin.client
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
-import android.util.Log
 import kotlinx.coroutines.*
-import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice

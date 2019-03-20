@@ -6,9 +6,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.runBlocking
-import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.modblesample.R
-import network.xyo.modbluetoothkotlin.client.XyoSentinelX
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas

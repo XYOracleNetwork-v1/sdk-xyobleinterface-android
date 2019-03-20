@@ -1,7 +1,8 @@
 package network.xyo.modbluetoothkotlin
 
-import android.util.Log
-import kotlinx.coroutines.*
+import kotlinx.coroutines.GlobalScope
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer

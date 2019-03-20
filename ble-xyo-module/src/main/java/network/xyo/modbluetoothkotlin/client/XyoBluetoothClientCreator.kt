@@ -1,15 +1,11 @@
 package network.xyo.modbluetoothkotlin.client
 
-import android.bluetooth.BluetoothGatt
 import kotlinx.coroutines.*
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import java.util.concurrent.ConcurrentHashMap
 import kotlin.concurrent.thread
 
 /**

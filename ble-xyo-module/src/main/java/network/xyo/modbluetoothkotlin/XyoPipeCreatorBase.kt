@@ -1,9 +1,8 @@
 package network.xyo.modbluetoothkotlin
 
 import network.xyo.core.XYBase
-import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import java.util.HashMap
+import java.util.*
 
 /**
  * The base class for "Pipe Creators", in this case, bluetooth client and server.

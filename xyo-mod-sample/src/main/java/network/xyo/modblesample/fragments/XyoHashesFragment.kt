@@ -7,11 +7,8 @@ import android.view.ViewGroup
 import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
-import kotlinx.android.synthetic.main.devices_fragment.*
 import kotlinx.android.synthetic.main.hashes_fragment.*
-import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.modblesample.R
-import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.modblesample.adapters.HashAdapter
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 

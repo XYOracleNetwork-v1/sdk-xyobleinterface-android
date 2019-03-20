@@ -8,12 +8,9 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.bound_witness_fragment.*
-import kotlinx.android.synthetic.main.devices_fragment.*
 import kotlinx.coroutines.runBlocking
-import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.modblesample.R
 import network.xyo.modblesample.adapters.BoundWitnessAdapter
-import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitnessVerify
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase

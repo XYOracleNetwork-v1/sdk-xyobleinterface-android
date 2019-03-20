@@ -2,48 +2,47 @@ package network.xyo.modblesample
 
 
 import android.os.Bundle
+import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
+import androidx.fragment.app.FragmentTransaction
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
+import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
-import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
-import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
-import network.xyo.modbluetoothkotlin.client.XyoBluetoothClientCreator
-import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
-import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
-import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import network.xyo.sdkcorekotlin.node.XyoOriginChainCreator
-import network.xyo.sdkcorekotlin.node.XyoNodeListener
-import network.xyo.sdkcorekotlin.persist.XyoInMemoryStorageProvider
-import java.nio.ByteBuffer
 import network.xyo.modblesample.adapters.DeviceAdapter
+import network.xyo.modblesample.fragments.*
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
 import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
+import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
+import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
+import network.xyo.modbluetoothkotlin.client.XyoBluetoothClientCreator
 import network.xyo.modbluetoothkotlin.client.XyoSentinelX
-import network.xyo.sdkcorekotlin.crypto.signing.stub.XyoStubSigner
+import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
+import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
+import network.xyo.sdkcorekotlin.crypto.signing.ecdsa.secp256k.XyoSha256WithSecp256K
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
-import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.heuristics.XyoHeuristicGetter
+import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
+import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
+import network.xyo.sdkcorekotlin.node.XyoNodeListener
+import network.xyo.sdkcorekotlin.node.XyoOriginChainCreator
+import network.xyo.sdkcorekotlin.persist.XyoInMemoryStorageProvider
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
+import java.nio.ByteBuffer
 import java.util.*
+import kotlin.collections.ArrayList
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
-import androidx.fragment.app.Fragment
-import androidx.fragment.app.FragmentTransaction
-import kotlinx.coroutines.runBlocking
-import network.xyo.ble.scanner.XYSmartScan
-import network.xyo.modblesample.fragments.*
-import network.xyo.sdkcorekotlin.crypto.signing.ecdsa.secp256k.XyoSha256WithSecp256K
-import kotlin.collections.ArrayList
 
 
 /**
