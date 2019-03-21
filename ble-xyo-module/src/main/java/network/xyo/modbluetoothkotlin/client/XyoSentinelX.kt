@@ -1,7 +1,7 @@
 package network.xyo.modbluetoothkotlin.client
 
 import android.content.Context
-import kotlinx.coroutines.Deferred
+import kotlinx.coroutines.*
 import network.xyo.ble.devices.XY4BluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
@@ -61,9 +61,14 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
         if (scanResult != null && isButtonPressed(scanResult) && lastButtonPressTime < System.currentTimeMillis() - 11_000) {
             // button of sentinel x is pressed
             lastButtonPressTime = System.currentTimeMillis()
-            for ((_, l) in this.sentinelListeners) {
-                l.onButtonPressed()
+            // TODO - added delay to allow listener attachment before calling it. onButtonPressed needs to be separate.
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(500)
+                for ((_, l) in sentinelListeners) {
+                    l.onButtonPressed()
+                }
             }
+
 
             return
         }
