@@ -21,10 +21,9 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
     private val sentinelListeners = HashMap<String, Listener>()
     private var lastButtonPressTime : Long = 0
 
-    private val batteryService = BatteryService(this)
-    private val primary = PrimaryService(this)
-
     //Keep as public
+    val batteryService = BatteryService(this)
+    val primary = PrimaryService(this)
     val deviceInformationService = DeviceInformationService(this)
 
     fun addButtonListener (key : String, listener : Listener) {
