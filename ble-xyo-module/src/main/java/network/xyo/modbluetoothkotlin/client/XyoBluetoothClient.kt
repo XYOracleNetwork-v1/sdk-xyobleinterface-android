@@ -374,9 +374,11 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                 serviceToCreator[XyoUuids.XYO_SERVICE] = this
                 uuidToCreator[XyoUuids.XYO_SERVICE] = this
                 XYBluetoothGattCallback.blockNotificationCallback = true
+                XYIBeaconBluetoothDevice.enable(true)
             } else {
                 serviceToCreator.remove(XyoUuids.XYO_SERVICE)
                 uuidToCreator.remove(XyoUuids.XYO_SERVICE)
+                XYIBeaconBluetoothDevice.enable(false)
                 XYBluetoothGattCallback.blockNotificationCallback = false
             }
         }

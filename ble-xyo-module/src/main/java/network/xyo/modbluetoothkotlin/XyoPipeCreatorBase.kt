@@ -1,6 +1,7 @@
 package network.xyo.modbluetoothkotlin
 
 import network.xyo.core.XYBase
+import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import java.util.*
 
@@ -20,7 +21,7 @@ abstract class XyoPipeCreatorBase : XYBase() {
         canCreate = false
     }
 
-    protected fun onCreateConnection (connection: XyoBluetoothConnection) {
+    protected fun onCreateConnection (connection: XyoNetworkPipe) {
         for ((_, listener) in listeners) {
             listener.onCreatedConnection(connection)
         }

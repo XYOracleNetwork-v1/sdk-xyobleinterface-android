@@ -9,7 +9,6 @@ import network.xyo.ble.gatt.server.XYBluetoothDescriptor
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.gatt.server.XYBluetoothService
 import network.xyo.ble.gatt.server.responders.XYBluetoothWriteResponder
-import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
 import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.XyoUuids.NOTIFY_DESCRIPTOR
@@ -78,9 +77,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                             val incoming = readPacket(bluetoothWriteCharacteristic, device).await()
 
                             if (incoming != null && device != null) {
-                                val connectionDevice = XyoBluetoothConnection()
-                                onCreateConnection(connectionDevice)
-                                connectionDevice.onTry()
 
                                 /**
                                  * We and the size with 0xFFFF to get the unsigned value.
@@ -91,12 +87,10 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
                                 // check if the request can do the catalogue
                                 if (procedureCatalogueInterface.canDo(catalogue)) {
                                     val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, catalogue)
-                                    connectionDevice.pipe = pipe
-                                    connectionDevice.onCreate(pipe)
+                                    onCreateConnection(pipe)
                                     bluetoothWriteCharacteristic.removeResponder(responderKey)
                                     return@launch
                                 }
-                                connectionDevice.onFail()
                             }
                         }
                     }

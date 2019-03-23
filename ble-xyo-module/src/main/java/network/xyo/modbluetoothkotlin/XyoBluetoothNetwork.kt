@@ -6,6 +6,7 @@ import kotlinx.coroutines.launch
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
+import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
 import network.xyo.core.XYBase
 import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
@@ -28,7 +29,7 @@ import kotlin.coroutines.suspendCoroutine
  */
 class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer,
                            userAdvertiser: XYBluetoothAdvertiser,
-                           scanner: XYSmartScanModern,
+                           scanner: XYSmartScan,
                            private val errorListener : XyoBluetoothNetworkListener?) : XyoNetworkProviderInterface, XYBase() {
 
     private var canCreate = false
@@ -66,25 +67,17 @@ class XyoBluetoothNetwork (bleServer: XYBluetoothGattServer,
         canCreate = true
         connectionRssi = null
         var resumed = false
-
         val serverKey = "server$this"
         val clientKey = "client$this"
 
         val pipe = suspendCoroutine<XyoNetworkPipe> { cont ->
             GlobalScope.launch {
                 val connectionCreationListener = object : XyoBluetoothPipeCreatorListener {
-                    override fun onCreatedConnection(connection: XyoBluetoothConnection) {
-                        val key = connection.toString()
-                        connection.addListener(key, object : XyoBluetoothConnectionListener {
-                            override fun onConnectionRequest() {}
-                            override fun onConnectionFail() {}
-                            override fun onCreated(pipe: XyoNetworkPipe) {
-                                if (!resumed) {
-                                    resumed = true
-                                    cont.resume(pipe)
-                                }
-                            }
-                        })
+                    override fun onCreatedConnection(connection: XyoNetworkPipe) {
+                        if (!resumed) {
+                            resumed = true
+                            cont.resume(connection)
+                        }
                     }
                 }
 

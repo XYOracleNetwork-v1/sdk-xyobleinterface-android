@@ -1,12 +1,11 @@
 package network.xyo.modbluetoothkotlin.client
 
 import kotlinx.coroutines.*
-import network.xyo.ble.scanner.XYSmartScanModern
-import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
+import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
+import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
-import kotlin.concurrent.thread
 
 /**
  * Helps manage creating a XyoBluetoothClient that can create a pipe. This is used so a single function can be
@@ -14,7 +13,7 @@ import kotlin.concurrent.thread
  *
  * @property scanner The scanner to obtain devices from.
  */
-class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPipeCreatorBase() {
+class XyoBluetoothClientCreator(private val scanner: XYSmartScan) : XyoPipeCreatorBase() {
 
 
     /**
@@ -56,12 +55,10 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
         canCreate = true
         gettingDevice = false
 
-        thread {
-            GlobalScope.launch {
-                while (canCreate) {
-                    finderJob = getNextDevice(procedureCatalogueInterface)
-                    delay(SCAN_FREQUENCY.toLong())
-                }
+        GlobalScope.launch {
+            while (canCreate) {
+                finderJob = getNextDevice(procedureCatalogueInterface)
+                delay(SCAN_FREQUENCY.toLong())
             }
         }
     }
@@ -74,23 +71,19 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
      */
     private fun getNextDevice (procedureCatalogue: XyoNetworkProcedureCatalogueInterface) = GlobalScope.launch {
         val device = getRandomDevice()
+        println(device)
 
         if (device !== null) {
             if (!gettingDevice && canCreate) {
-                val connectionDevice = XyoBluetoothConnection()
-                onCreateConnection(connectionDevice)
-                connectionDevice.onTry()
 
                 val pipe : XyoNetworkPipe? = checkDevice(device, procedureCatalogue).await()
 
 
                 if (pipe != null) {
-                    connectionDevice.pipe = pipe
-                    connectionDevice.onCreate(pipe)
+                    onCreateConnection(pipe)
                     lastDevice = device.hashCode()
                     return@launch
                 }
-                connectionDevice.onFail()
             }
         }
     }
@@ -104,10 +97,14 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
     private fun getRandomDevice () : XyoBluetoothClient? {
         val xyoClients = ArrayList<XyoBluetoothClient>()
 
+
         for (device in scanner.devices.values) {
             if (device is XyoBluetoothClient) {
+                println("device")
                 xyoClients.add(device)
             }
+            println(XyoUuids.XYO_SERVICE.toString())
+            println(device)
         }
 
         val randomClients = xyoClients.shuffled()
@@ -134,18 +131,18 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
      */
     private fun checkDevice(device: XyoBluetoothClient, procedureCatalogue: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
         gettingDevice = true
-//        log.info("Device is XyoBluetoothClient : ${device.address}")
+        log.info("Device is XyoBluetoothClient : ${device.address}")
 
         val pipe = device.createPipe(procedureCatalogue).await()
 
         if (pipe != null) {
-//            log.info("Created pipe : ${device.address}")
+            log.info("Created pipe : ${device.address}")
             // gettingDevice = false
             return@async pipe
         }
 
-//        log.info("Could not create pipe : ${device.address}")
-//        log.info("Device is not XyoBluetoothClient : ${device.address}")
+        log.info("Could not create pipe : ${device.address}")
+        log.info("Device is not XyoBluetoothClient : ${device.address}")
         gettingDevice = false
         return@async null
     }
@@ -164,6 +161,6 @@ class XyoBluetoothClientCreator(private val scanner: XYSmartScanModern) : XyoPip
         /**
          * How often to look aground for nearby devices
          */
-        const val SCAN_FREQUENCY = 100
+        const val SCAN_FREQUENCY = 1_000
     }
 }
