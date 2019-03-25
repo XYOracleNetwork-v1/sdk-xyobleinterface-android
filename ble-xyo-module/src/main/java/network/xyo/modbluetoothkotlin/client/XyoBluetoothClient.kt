@@ -85,7 +85,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         // writes the encoded catalogue to the server
         log.info("Writing catalogue to server.")
 
-        findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, true).await()
+        findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PIPE, true).await()
 
         val requestMtu = requestMtu(MAX_MTU).await()
 
@@ -94,7 +94,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         }
 
         val readJob = readIncommoding()
-        val writeError = chunkSend(sizeEncodedProcedureCatalogue, XyoUuids.XYO_WRITE, XyoUuids.XYO_SERVICE, 4).await()
+        val writeError = chunkSend(sizeEncodedProcedureCatalogue, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4).await()
 
         if (writeError != null) {
             log.info("Error writing catalogue to server. $writeError")
@@ -219,7 +219,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                 val sendAndReceive = GlobalScope.async {
 
                     val readJob = readIncommoding()
-                    val packetError = chunkSend(data, XyoUuids.XYO_WRITE, XyoUuids.XYO_SERVICE, 4).await()
+                    val packetError = chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4).await()
 
                     log.info("Sent entire packet to the server.")
                     if (packetError == null) {
@@ -325,7 +325,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                     super.onCharacteristicChanged(gatt, characteristic)
                     val value = characteristic?.value
 
-                    if (characteristic?.uuid == XyoUuids.XYO_WRITE && !hasResumed) {
+                    if (characteristic?.uuid == XyoUuids.XYO_PIPE && !hasResumed) {
 
                         if (numberOfPackets == 0 && value != null) {
                             incomingPacket = XyoBluetoothIncomingPacket(value)

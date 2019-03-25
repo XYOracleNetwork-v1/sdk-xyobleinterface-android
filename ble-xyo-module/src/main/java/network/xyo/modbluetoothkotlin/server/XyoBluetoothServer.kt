@@ -370,7 +370,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         }
 
         private val bluetoothWriteCharacteristic = XYBluetoothCharacteristic(
-                XyoUuids.XYO_WRITE,
+                XyoUuids.XYO_PIPE,
                 BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE ,
                 BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PERMISSION_WRITE
         )
