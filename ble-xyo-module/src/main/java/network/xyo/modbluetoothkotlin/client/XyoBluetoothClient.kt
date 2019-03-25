@@ -24,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.experimental.and
 
 
 /**
@@ -392,7 +393,8 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                 if (ad?.size == 23) {
                     val id = ad[19]
 
-                    if (xyoManufactorIdToCreator.containsKey(id)) {
+                    // masks the byte with 00111111
+                    if (xyoManufactorIdToCreator.containsKey(id and 0x3f)) {
                         xyoManufactorIdToCreator[id]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
                         return
                     }
