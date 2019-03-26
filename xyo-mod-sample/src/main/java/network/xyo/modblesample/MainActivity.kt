@@ -8,41 +8,37 @@ import androidx.fragment.app.FragmentTransaction
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
 import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
+import network.xyo.ble.gatt.peripheral.XYBluetoothError
+import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
-import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.modblesample.fragments.*
-import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
-import network.xyo.modbluetoothkotlin.XyoBluetoothConnectionListener
-import network.xyo.modbluetoothkotlin.XyoBluetoothPipeCreatorListener
 import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
-import network.xyo.modbluetoothkotlin.client.XyoBluetoothClientCreator
 import network.xyo.modbluetoothkotlin.client.XyoSentinelX
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.crypto.signing.ecdsa.secp256k.XyoSha256WithSecp256K
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
-import network.xyo.sdkcorekotlin.heuristics.XyoHeuristicGetter
-import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
+import network.xyo.sdkcorekotlin.network.XyoNetworkHandler
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.node.XyoNodeListener
-import network.xyo.sdkcorekotlin.node.XyoOriginChainCreator
+import network.xyo.sdkcorekotlin.node.XyoRelayNode
 import network.xyo.sdkcorekotlin.persist.XyoInMemoryStorageProvider
+import network.xyo.sdkcorekotlin.persist.repositories.XyoStorageBridgeQueueRepository
+import network.xyo.sdkcorekotlin.persist.repositories.XyoStorageOriginBlockRepository
+import network.xyo.sdkcorekotlin.persist.repositories.XyoStorageOriginStateRepository
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 import java.nio.ByteBuffer
 import java.util.*
 import kotlin.collections.ArrayList
-import kotlin.coroutines.resume
-import kotlin.coroutines.suspendCoroutine
 
 
 /**
@@ -53,11 +49,10 @@ import kotlin.coroutines.suspendCoroutine
  */
 class MainActivity : FragmentActivity() {
     private var shouldBridge = false
-    private lateinit var clientFinder: XyoBluetoothClientCreator
     private lateinit var scanner: XYSmartScanModern
-    private lateinit var deviceList: DeviceAdapter
     private lateinit var server: XyoBluetoothServer
     private lateinit var advertiser: XyoBluetoothAdvertiser
+    private lateinit var node : XyoRelayNode
 
     private val boundWitnessCatalogue = object : XyoNetworkProcedureCatalogueInterface {
         override fun canDo(byteArray: ByteArray): Boolean {
@@ -66,6 +61,14 @@ class MainActivity : FragmentActivity() {
             }
 
             return ByteBuffer.wrap(byteArray).int and 1 != 0
+        }
+
+        override fun choose(byteArray: ByteArray): ByteArray {
+            return byteArrayOf(0x00, 0x00, 0x00, 0x01)
+        }
+
+        override fun getNetworlHuerestics(): Array<XyoBuff> {
+            return arrayOf()
         }
 
         override fun getEncodedCanDo(): ByteArray {
@@ -97,10 +100,18 @@ class MainActivity : FragmentActivity() {
         setContentView(R.layout.activity_main)
 
         requestBluetooth(bluetoothPermissionHandler)
+
+        val hasher = XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")
+        val sotrage = XyoInMemoryStorageProvider()
+        val blockRepo = XyoStorageOriginBlockRepository(sotrage, hasher)
+        val stateRepo = XyoStorageOriginStateRepository(sotrage)
+        val queueRepo = XyoStorageBridgeQueueRepository(sotrage)
+        node = XyoRelayNode(blockRepo, stateRepo, queueRepo, hasher)
+
         showDevicesFragment()
 
         runBlocking {
-            node.selfSignOriginChain(0).await()
+            node.selfSignOriginChain().await()
             node.addListener(this.toString(), nodeListener)
         }
     }
@@ -125,7 +136,6 @@ class MainActivity : FragmentActivity() {
         XYIBeaconBluetoothDevice.enable(true)
         scanner = createNewScanner()
         scanner.start().await()
-        clientFinder = XyoBluetoothClientCreator(scanner)
         scanner.addListener(this.toString(), deviceButtonListener)
     }
 
@@ -158,10 +168,10 @@ class MainActivity : FragmentActivity() {
             val listen = showPendingBwFragment()
 
             GlobalScope.launch {
-                val bw = tryBoundWitness(device).await()
+                val bw = tryBoundWitness(device)
 
-                if (bw == null) {
-                    listen.onBoundWitnessEndFailure(java.lang.Exception("Device can not bound witness."))
+                if (bw.value == null) {
+                    listen.onBoundWitnessEndFailure(java.lang.Exception("Device can not bound witness. ${bw.error}"))
                 }
             }
         }
@@ -198,11 +208,11 @@ class MainActivity : FragmentActivity() {
 
     private fun getAllBoundWitnesses () : Array<XyoBoundWitness> {
         return runBlocking {
-            val blockHashes = node.originBlocks.getAllOriginBlockHashes().await() ?: return@runBlocking arrayOf<XyoBoundWitness>()
+            val blockHashes = node.blockRepository.getAllOriginBlockHashes().await() ?: return@runBlocking arrayOf<XyoBoundWitness>()
             val returnBlocks = ArrayList<XyoBoundWitness>()
 
             for (hash in blockHashes) {
-                val block = node.originBlocks.getOriginBlockByBlockHash(hash.bytesCopy).await()
+                val block = node.blockRepository.getOriginBlockByBlockHash(hash.bytesCopy).await()
 
                 if (block != null) {
                     returnBlocks.add(block)
@@ -215,9 +225,7 @@ class MainActivity : FragmentActivity() {
 
     private fun initServer () = GlobalScope.launch {
         server = createNewServer()
-        server.spinUpServer().await()
-        server.addListener("main", serverListener)
-        server.start(boundWitnessCatalogue)
+        server.initServer().await()
         advertiser = createNewAdvertiser()
         advertiser.configureAdvertiser()
         advertiser.startAdvertiser().await()
@@ -256,75 +264,20 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private val serverListener = object : XyoBluetoothPipeCreatorListener {
-        override fun onCreatedConnection(connection: XyoBluetoothConnection) {
 
-            connection.addListener(connection.toString(), object : XyoBluetoothConnectionListener {
-                override fun onConnectionRequest() {}
-                override fun onConnectionFail() {}
 
-                override fun onCreated(pipe: XyoNetworkPipe) {
-                    GlobalScope.launch {
-                        node.tryBoundWitnessPipe(pipe)
-                    }
-                }
-            })
-        }
-    }
-
-    private val node = object : XyoOriginChainCreator(XyoInMemoryStorageProvider(), XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")) {
-        override fun getChoice(catalog: Int, strict: Boolean): Int {
-            if (shouldBridge) {
-                return 2
-            }
-
-            return 1
-        }
-
-        init {
-            this.originState.addSigner(XyoSha256WithSecp256K.newInstance())
-        }
-
-        suspend fun tryBoundWitnessPipe(pipe: XyoNetworkPipe) = suspendCoroutine<XyoBoundWitness?> { cont ->
-            GlobalScope.launch {
-                addListener("bw_client", object : XyoNodeListener() {
-                    override fun onBoundWitnessEndFailure(error: Exception?) {
-                        removeListener("bw")
-                        cont.resume(null)
-                    }
-
-                    override fun onBoundWitnessEndSuccess(boundWitness: XyoBoundWitness) {
-                        removeListener("bw")
-                        cont.resume(boundWitness)
-                    }
-
-                })
-
-                doBoundWitness(pipe.initiationData, pipe)
-            }
-        }
-    }
-
-    private fun tryBoundWitness (device: XyoBluetoothClient) = GlobalScope.async {
-            val pipe = device.createPipe(boundWitnessCatalogue).await() as? XyoBluetoothClient.XyoBluetoothClientPipe
+    private suspend fun tryBoundWitness (device: XyoBluetoothClient): XYBluetoothResult<XyoBoundWitness> {
+        return device.connection {
+            val pipe = device.createPipe().await()
 
             if (pipe != null) {
-                node.addHeuristic("rssi", object : XyoHeuristicGetter {
-                    override fun getHeuristic(): XyoBuff? {
-                        val rssi = pipe.rssi?.toByte() ?: return null
+                val handler = XyoNetworkHandler(pipe)
 
-                        return XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi))
-                    }
-                })
-
-                val bw = node.tryBoundWitnessPipe(pipe)
-
-                node.removeHeuristic("rssi")
-
-                return@async bw
-
+                val bw = node.boundWitness(handler, boundWitnessCatalogue).await()
+                return@connection XYBluetoothResult(bw)
             }
 
-        return@async null
+            return@connection XYBluetoothResult<XyoBoundWitness>(null, XYBluetoothError("pipe is null"))
+        }.await()
     }
 }
