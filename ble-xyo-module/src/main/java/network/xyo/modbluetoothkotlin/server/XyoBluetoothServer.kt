@@ -15,6 +15,7 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
+import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 import kotlin.coroutines.resume
 
 /**
@@ -94,6 +95,11 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
          */
         override fun close(): Deferred<Any?> = GlobalScope.async {
             bluetoothServer.disconnect(bluetoothDevice)
+        }
+
+        // TODO find way to get RSSI here
+        override fun getNetworkHeretics(): Array<XyoBuff> {
+            return arrayOf()
         }
 
 

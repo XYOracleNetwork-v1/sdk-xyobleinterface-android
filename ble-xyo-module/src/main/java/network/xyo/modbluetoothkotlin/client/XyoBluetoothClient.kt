@@ -17,6 +17,8 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
+import network.xyo.sdkcorekotlin.schemas.XyoSchemas
+import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
 import java.util.*
@@ -77,6 +79,15 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         override fun close(): Deferred<Any?> = GlobalScope.async {
             disconnect()
             this@XyoBluetoothClient.close()
+        }
+
+        override fun getNetworkHeretics(): Array<XyoBuff> {
+            if (rssi != null) {
+                val encodedRssi = XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi.toByte()))
+                return arrayOf(encodedRssi)
+            }
+
+            return arrayOf()
         }
 
         /**

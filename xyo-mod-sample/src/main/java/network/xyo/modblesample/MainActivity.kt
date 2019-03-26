@@ -79,10 +79,6 @@ class MainActivity : FragmentActivity() {
             return byteArrayOf(0x00, 0x00, 0x00, 0x01)
         }
 
-        override fun getNetworlHuerestics(): Array<XyoBuff> {
-            return arrayOf()
-        }
-
         override fun getEncodedCanDo(): ByteArray {
             if (shouldBridge) {
                 return byteArrayOf(0x00, 0x00, 0x00, 0xff.toByte())
