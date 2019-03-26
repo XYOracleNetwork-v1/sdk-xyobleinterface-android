@@ -27,6 +27,7 @@ import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.crypto.signing.ecdsa.secp256k.XyoSha256WithSecp256K
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkHandler
+import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.node.XyoNodeListener
 import network.xyo.sdkcorekotlin.node.XyoRelayNode
@@ -53,6 +54,17 @@ class MainActivity : FragmentActivity() {
     private lateinit var server: XyoBluetoothServer
     private lateinit var advertiser: XyoBluetoothAdvertiser
     private lateinit var node : XyoRelayNode
+
+    val serverCallback = object : XyoBluetoothServer.Listener {
+        override fun onPipe(pipe: XyoNetworkPipe) {
+            GlobalScope.launch {
+                val handler = XyoNetworkHandler(pipe)
+
+                node.boundWitness(handler, boundWitnessCatalogue).await()
+                return@launch
+            }
+        }
+    }
 
     private val boundWitnessCatalogue = object : XyoNetworkProcedureCatalogueInterface {
         override fun canDo(byteArray: ByteArray): Boolean {
@@ -229,6 +241,7 @@ class MainActivity : FragmentActivity() {
         advertiser = createNewAdvertiser()
         advertiser.configureAdvertiser()
         advertiser.startAdvertiser().await()
+        server.listener = serverCallback
     }
 
     private fun replaceFragment(fragment: Fragment) {
