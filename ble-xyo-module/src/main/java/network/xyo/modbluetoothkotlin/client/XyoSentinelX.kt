@@ -62,7 +62,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
             lastButtonPressTime = System.currentTimeMillis()
             // TODO - added delay to allow listener attachment before calling it. onButtonPressed needs to be separate.
             CoroutineScope(Dispatchers.IO).launch {
-                delay(500)
+                delay(1000)
                 for ((_, l) in sentinelListeners) {
                     l.onButtonPressed()
                 }
