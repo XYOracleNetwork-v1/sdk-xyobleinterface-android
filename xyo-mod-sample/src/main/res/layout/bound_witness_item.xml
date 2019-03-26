@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <RelativeLayout xmlns:android="http://schemas.android.com/apk/res/android"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content">
 
     <androidx.cardview.widget.CardView
         xmlns:card_view="http://schemas.android.com/apk/res-auto"
@@ -18,8 +18,8 @@
         card_view:cardCornerRadius="4dp">
 
         <RelativeLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content">
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content">
 
             <TextView
                 android:layout_width="wrap_content"
@@ -29,42 +29,20 @@
                 android:paddingEnd="20dp"
                 android:paddingBottom="8dp"
                 android:textColor="#fff"
-                android:id="@+id/tx_device_name"
+                android:id="@+id/tx_bw_item_name"
                 android:layout_height="wrap_content"/>
 
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_below="@+id/tx_device_name"
-                android:id="@+id/tx_mac"
+                android:layout_below="@+id/tx_bw_item_name"
+                android:id="@+id/tx_bw_item_content"
                 android:paddingStart="20dp"
                 android:paddingEnd="20dp"
                 android:textColor="#fff"
                 android:paddingBottom="20dp"
                 android:textSize="12sp" />
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_below="@+id/tx_mac"
-                android:textColor="#fff"
-                android:id="@+id/tx_type_of_device"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="20dp"
-                android:textSize="12sp" />
-
-            <LinearLayout
-                android:layout_below="@+id/tx_type_of_device"
-                android:id="@+id/ll_properties"
-                android:layout_width="wrap_content"
-                android:orientation="vertical"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:paddingBottom="20dp"
-                android:layout_height="wrap_content">
-
-            </LinearLayout>
 
         </RelativeLayout>
 

@@ -8,6 +8,7 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.devices_fragment.*
+import kotlinx.android.synthetic.main.devices_fragment.view.*
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.modblesample.R
@@ -16,9 +17,12 @@ import network.xyo.modblesample.R
 class XyoDevicesFragment : Fragment() {
     interface XyoDevicesFragmentHandler {
         fun getDevices () : Array<XYBluetoothDevice>
+        fun onDeviceSelected (device : XYBluetoothDevice)
+        fun onHashButtonPress ()
+        fun onBridgeChange (bridge : Boolean)
     }
 
-    var deviceAdapter = DeviceAdapter(null)
+    private var deviceAdapter = DeviceAdapter(null)
     var deviceHandler : XyoDevicesFragmentHandler? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View? {
@@ -28,6 +32,14 @@ class XyoDevicesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         initAdapter()
         initRefreshListener()
+
+        view.btn_show_hashes.setOnClickListener {
+            deviceHandler?.onHashButtonPress()
+        }
+
+        sw_bridge.setOnCheckedChangeListener { _, isChecked ->
+            deviceHandler?.onBridgeChange(isChecked)
+        }
     }
 
     private fun initAdapter () {
@@ -35,6 +47,12 @@ class XyoDevicesFragment : Fragment() {
         val layoutManager = LinearLayoutManager(this.context, RecyclerView.VERTICAL, false)
         adapterView.layoutManager = layoutManager
         adapterView.adapter = deviceAdapter
+
+        deviceAdapter.listener = object : DeviceAdapter.XYServiceListAdapterListener {
+            override fun onClick(device: XYBluetoothDevice) {
+                deviceHandler?.onDeviceSelected(device)
+            }
+        }
     }
 
     private fun initRefreshListener () {

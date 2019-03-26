@@ -14,17 +14,21 @@ object XyoUuids {
     /**
      * The GATT characteristic to be written to when creating pipes. This will be in the XYO_SERVICE.
      */
-    val XYO_WRITE = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456490b2d")!!
+    val XYO_PIPE = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456490b2d")!!
 
     /**
      * The password GATT characteristic to write to when changing the password.
      */
-    val XYO_PIN = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456500b2d")!!
+    val XYO_PASSWORD = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564A0b2d")!!
 
     /**
      * The password bound witness data characteristic characteristic to be written to.
      */
-    val XYO_BW = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa456510b2d")!!
+    val XYO_CHANGE_BW_DATA = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564B0b2d")!!
+
+    val XYO_RESET_DEVICE = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564C0b2d")!!
+
+    val XYO_PUBLIC_KEY = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564D0b2d")
 
     /**
      * The descriptor to use when to manage subscribing to notifications.

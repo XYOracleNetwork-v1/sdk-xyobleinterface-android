@@ -3,9 +3,7 @@ package network.xyo.modbluetoothkotlin.client
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
-import android.util.Log
 import kotlinx.coroutines.*
-import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
@@ -16,7 +14,7 @@ import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
-import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
+import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkobjectmodelkotlin.objects.toHexString
@@ -26,6 +24,7 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.HashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
+import kotlin.experimental.and
 
 
 /**
@@ -42,129 +41,20 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
      */
     private var mtu = DEFAULT_MTU
 
-
-
     /**
      * creates a XyoNetworkPipe with THIS bluetooth device.
      *
-     * @param catalogueInterface The catalogue to respect when creating a pipe.
      * @return A Deferred XyoNetworkPipe if successful, null if not.
      */
-    fun createPipe(catalogueInterface: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
-        return@async suspendCoroutine<XyoNetworkPipe?> { cont ->
-            GlobalScope.launch {
-                connection {
-                    val pipe = doCreatePipe(catalogueInterface).await()
-
-                    cont.resume(pipe)
-                    coroutineContext.cancel()
-                    return@connection XYBluetoothResult<Any?>(null)
-                }.await()
-
-
-                /**
-                 * Make sure to cancel all coroutines in the scope or the suspendCoroutine may hang.
-                 */
-                cont.resume(null)
-                coroutineContext.cancel()
-                coroutineContext.cancelChildren()
-                cont.context.cancelChildren()
-                return@launch
-            }
-        }
-    }
-
-
-
-    /**
-     * The logic for creating a XyoNetworkPipe
-     *
-     * @param catalogueInterface The catalogue to respect when creating a pipe.
-     * @return A Deferred XyoNetworkPipe if successful, null if not.
-     */
-    private fun doCreatePipe(catalogueInterface: XyoNetworkProcedureCatalogueInterface): Deferred<XyoNetworkPipe?> = GlobalScope.async {
-        val sizeEncodedProcedureCatalogue = getSizeEncodedProcedureCatalogue(catalogueInterface)
-        // writes the encoded catalogue to the server
-        log.info("Writing catalogue to server.")
-
-        findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_WRITE, true).await()
+    fun createPipe(): Deferred<XyoNetworkPipe?> = GlobalScope.async {
+        findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PIPE, true).await()
 
         val requestMtu = requestMtu(MAX_MTU).await()
 
-        if (requestMtu.error == null) {
-            mtu = (requestMtu.value ?: mtu) - 3
-        }
+        mtu = (requestMtu.value ?: mtu) - 3
 
-        val readJob = readIncommoding()
-        val writeError = chunkSend(sizeEncodedProcedureCatalogue, XyoUuids.XYO_WRITE, XyoUuids.XYO_SERVICE, 4).await()
-
-        if (writeError != null) {
-            log.info("Error writing catalogue to server. $writeError")
-            disconnect()
-            close()
-            return@async null
-        }
-
-        log.info("Wrote catalogue to server.")
-
-        val incomingPacket = readJob.await()
-
-        log.info("Read the server's response. ${incomingPacket?.size}")
-
-        // check if the packet was read successfully
-        if (incomingPacket != null) {
-            log.info("Read the server's response (good).")
-            setStayConnected(true)
-            return@async createPipeFromResponse(incomingPacket)
-        } else {
-            disconnect()
-            close()
-            log.info("Error reading the server's response.")
-            return@async null
-        }
+        return@async XyoBluetoothClientPipe(rssi)
     }
-
-
-
-    /**
-     * Tries to create a XyoBluetoothClientPipe after getting the response from the server.
-     *
-     * @param incomingPacket The response from the server.
-     * @return A XyoBluetoothClientPipe from the
-     */
-    private fun createPipeFromResponse(incomingPacket: ByteArray): XyoBluetoothClientPipe? {
-
-        /**
-         * We and with 0xFFFF to get the unsigned value of the size.
-         */
-        val sizeOfCatalog = incomingPacket[0].toInt() and 0xFFFF
-
-        if (sizeOfCatalog + 1 > incomingPacket.size) {
-            return null
-        }
-
-        val catalog = incomingPacket.copyOfRange(1, sizeOfCatalog + 1)
-        val initiationData = incomingPacket.copyOfRange(sizeOfCatalog + 1, incomingPacket.size)
-
-        return XyoBluetoothClientPipe(catalog, initiationData, rssi)
-    }
-
-
-
-    /**
-     * Converts a XyoNetworkProcedureCatalogueInterface to the proper byte format when sending to the server.
-     *
-     * @param catalogueInterface The catalogue to convert.
-     * @return The byte encoded catalogue with a prepended size.
-     */
-    private fun getSizeEncodedProcedureCatalogue(catalogueInterface: XyoNetworkProcedureCatalogueInterface): ByteArray {
-        val firstDataToSend = catalogueInterface.getEncodedCanDo()
-        val buff = ByteBuffer.allocate(1 + firstDataToSend.size)
-        buff.put(firstDataToSend.size.toByte())
-        buff.put(firstDataToSend)
-        return buff.array()
-    }
-
 
 
     /**
@@ -176,22 +66,9 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
      * @property initiationData The data that the other party sent after connecting (if any).
      * @property rssi The RSSI of the connection. This is used for the RSSI heuristic (if any).
      */
-    inner class XyoBluetoothClientPipe(private val role: ByteArray, override val initiationData: ByteArray?, val rssi : Int?) : XyoNetworkPipe() {
+    inner class XyoBluetoothClientPipe(val rssi : Int?) : XyoNetworkPipe {
 
-        /**
-         * The XyoNetworkPeer at the other end of the pipe.
-         */
-        override val peer: XyoNetworkPeer = object : XyoNetworkPeer() {
-            override fun getRole(): ByteArray {
-                return role
-            }
-
-            override fun getTemporaryPeerId(): Int {
-                return device?.address?.hashCode() ?: 0
-            }
-        }
-
-
+        override val initiationData: XyoAdvertisePacket? = null
 
         /**
          * Closes the pipe between parties. In this case, disconnects from the device and closes the GATT. This should
@@ -201,8 +78,6 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
             disconnect()
             this@XyoBluetoothClient.close()
         }
-
-
 
         /**
          * Sends data to the other end of the pipe and waits for a response if the waitForResponse flag is set to
@@ -221,7 +96,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                 val sendAndReceive = GlobalScope.async {
 
                     val readJob = readIncommoding()
-                    val packetError = chunkSend(data, XyoUuids.XYO_WRITE, XyoUuids.XYO_SERVICE, 4).await()
+                    val packetError = chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4).await()
 
                     log.info("Sent entire packet to the server.")
                     if (packetError == null) {
@@ -232,6 +107,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                         if (waitForResponse) {
                             valueIn = readJob.await()
                         }
+
                         log.info("Have read entire server response packet. ${valueIn?.toHexString()}")
                         removeListener(disconnectKey)
                         cont.resume(valueIn)
@@ -310,6 +186,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         return@async suspendCoroutine<ByteArray?> { cont ->
             val key = this.toString() + Math.random().toString()
 
+            println("HERE")
             centralCallback.addListener(key, object : XYBluetoothGattCallback() {
                 var numberOfPackets = 0
                 var hasResumed = false
@@ -325,9 +202,10 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     super.onCharacteristicChanged(gatt, characteristic)
+                    println("onCharacteristicChanged")
                     val value = characteristic?.value
 
-                    if (characteristic?.uuid == XyoUuids.XYO_WRITE && !hasResumed) {
+                    if (characteristic?.uuid == XyoUuids.XYO_PIPE && !hasResumed) {
 
                         if (numberOfPackets == 0 && value != null) {
                             incomingPacket = XyoBluetoothIncomingPacket(value)
@@ -376,23 +254,26 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                 serviceToCreator[XyoUuids.XYO_SERVICE] = this
                 uuidToCreator[XyoUuids.XYO_SERVICE] = this
                 XYBluetoothGattCallback.blockNotificationCallback = true
+                XYIBeaconBluetoothDevice.enable(true)
             } else {
                 serviceToCreator.remove(XyoUuids.XYO_SERVICE)
                 uuidToCreator.remove(XyoUuids.XYO_SERVICE)
+                XYIBeaconBluetoothDevice.enable(false)
                 XYBluetoothGattCallback.blockNotificationCallback = false
             }
         }
 
         override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
-            val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode() ?: 0
+            val hash = scanResult.device?.address.hashCode()
 
-            if (!foundDevices.containsKey(hash.toString()) && !globalDevices.contains(hash)) {
+            if ((!foundDevices.containsKey(hash.toString())) && (!globalDevices.containsKey(hash.toString()))) {
                 val ad = scanResult.scanRecord?.getManufacturerSpecificData(0x4c)
 
                 if (ad?.size == 23) {
                     val id = ad[19]
 
-                    if (xyoManufactorIdToCreator.containsKey(id)) {
+                    // masks the byte with 00111111
+                    if (xyoManufactorIdToCreator.containsKey(id and 0x3f)) {
                         xyoManufactorIdToCreator[id]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
                         return
                     }

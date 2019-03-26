@@ -1,20 +1,30 @@
 package network.xyo.modbluetoothkotlin.client
 
 import android.content.Context
-import kotlinx.coroutines.Deferred
-import network.xyo.ble.devices.XYAppleBluetoothDevice
+import kotlinx.coroutines.*
+import network.xyo.ble.devices.XY4BluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.scanner.XYScanResult
+import network.xyo.ble.services.standard.BatteryService
+import network.xyo.ble.services.standard.DeviceInformationService
+import network.xyo.ble.services.xy4.PrimaryService
 import network.xyo.modbluetoothkotlin.XyoUuids
 import java.nio.ByteBuffer
+import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
 open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, hash : Int) : XyoBluetoothClient(context, scanResult, hash) {
     private val sentinelListeners = HashMap<String, Listener>()
+    private var lastButtonPressTime : Long = 0
+
+    //Keep as public
+    val batteryService = BatteryService(this)
+    val primary = PrimaryService(this)
+    val deviceInformationService = DeviceInformationService(this)
 
     fun addButtonListener (key : String, listener : Listener) {
         sentinelListeners[key] = listener
@@ -47,11 +57,17 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
     }
 
     override fun onDetect(scanResult: XYScanResult?) {
-        if (scanResult != null && isButtonPressed(scanResult)) {
+        if (scanResult != null && isButtonPressed(scanResult) && lastButtonPressTime < System.currentTimeMillis() - 11_000) {
             // button of sentinel x is pressed
-            for ((_, l) in this.sentinelListeners) {
-                l.onButtonPressed()
+            lastButtonPressTime = System.currentTimeMillis()
+            // TODO - added delay to allow listener attachment before calling it. onButtonPressed needs to be separate.
+            CoroutineScope(Dispatchers.IO).launch {
+                delay(1000)
+                for ((_, l) in sentinelListeners) {
+                    l.onButtonPressed()
+                }
             }
+
 
             return
         }
@@ -74,7 +90,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
                 .put(newPassword)
                 .array()
 
-        return chunkSend(encoded, XyoUuids.XYO_PIN, XyoUuids.XYO_SERVICE, 1)
+        return chunkSend(encoded, XyoUuids.XYO_PASSWORD, XyoUuids.XYO_SERVICE, 1)
     }
 
     /**
@@ -92,11 +108,50 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
                 .put(boundWitnessData)
                 .array()
 
-        return chunkSend(encoded, XyoUuids.XYO_BW, XyoUuids.XYO_SERVICE, 4)
+        return chunkSend(encoded, XyoUuids.XYO_CHANGE_BW_DATA, XyoUuids.XYO_SERVICE, 4)
     }
 
     fun getBoundWitnessData () : Deferred<XYBluetoothResult<ByteArray>> {
-        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_BW)
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_CHANGE_BW_DATA)
+    }
+
+    fun resetDevice(password: ByteArray): Deferred<XYBluetoothResult<ByteArray>> {
+        val msg = ByteBuffer.allocate(password.size + 1)
+                .put((password.size + 1).toByte())
+                .put(password)
+                .array()
+
+        return findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_RESET_DEVICE, msg)
+    }
+
+    fun getPublicKey () : Deferred<XYBluetoothResult<ByteArray>> {
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
+    }
+
+    /**
+     * Unlock the device.
+     */
+    fun lock() = connection {
+        return@connection primary.lock.set(XY4BluetoothDevice.DefaultLockCode).await()
+    }
+
+    /**
+     * Unlock the device
+     */
+    fun unlock() = connection {
+        return@connection primary.unlock.set(XY4BluetoothDevice.DefaultLockCode).await()
+    }
+
+    fun stayAwake() = connection {
+        return@connection primary.stayAwake.set(1).await()
+    }
+
+    fun fallAsleep() = connection {
+        return@connection primary.stayAwake.set(0).await()
+    }
+
+    fun batteryLevel() = connection {
+        return@connection batteryService.level.get().await()
     }
 
     companion object : XYCreator() {
@@ -114,7 +169,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
         }
 
         override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
-            val hash = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)?.contentHashCode() ?: 0
+            val hash = scanResult.device?.address.hashCode()
             val createdDevice = XyoSentinelX(context, scanResult, hash)
             foundDevices[hash.toString()] = createdDevice
             globalDevices[hash.toString()] = createdDevice

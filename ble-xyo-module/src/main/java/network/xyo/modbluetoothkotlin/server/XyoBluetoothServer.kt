@@ -9,15 +9,12 @@ import network.xyo.ble.gatt.server.XYBluetoothDescriptor
 import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.gatt.server.XYBluetoothService
 import network.xyo.ble.gatt.server.responders.XYBluetoothWriteResponder
-import network.xyo.modbluetoothkotlin.XyoBluetoothConnection
-import network.xyo.modbluetoothkotlin.XyoPipeCreatorBase
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.XyoUuids.NOTIFY_DESCRIPTOR
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
-import network.xyo.sdkcorekotlin.network.XyoNetworkPeer
+import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import kotlin.coroutines.resume
 
 /**
@@ -26,7 +23,13 @@ import kotlin.coroutines.resume
  *
  * @property bluetoothServer The Bluetooth GATT server to create the pipe with.
  */
-class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) : XyoPipeCreatorBase() {
+class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
+
+    var listener: Listener? = null
+
+    interface Listener {
+        fun onPipe (pipe: XyoNetworkPipe)
+    }
 
     /**
      * The key of the main gatt listener to listen for new new XYO Devices.
@@ -43,67 +46,25 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
     private val mtuS = HashMap<Int, Int>()
 
 
+    private val serverPrimaryEndpoint = object : BluetoothGattServerCallback() {
+        override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
+            super.onConnectionStateChange(device, status, newState)
 
-    /**
-     * Stops the BLE server from allowing new incoming connections. NOTE: this does not stop the BLE server or
-     * advertising It simply stops the creation of XyoNetworkPipes.
-     */
-    override fun stop() {
-        super.stop()
-        log.info("XyoBluetoothServer stopped.")
-    }
+            when (newState) {
+                BluetoothGatt.STATE_CONNECTED -> {
+                    GlobalScope.launch {
+                        val incoming = readPacket(bluetoothWriteCharacteristic, device).await()
 
-
-
-    /**
-     * Allows the BLE server to create Xyo Network pipes. NOTE: this does not start the BLE server or the advertiser,
-     * it simply allows the creation of Xyo Network Pipes.
-     *
-     * @param procedureCatalogueInterface The catalogue to send to respect when creating Xyo Network Pipes.
-     */
-    override fun start (procedureCatalogueInterface: XyoNetworkProcedureCatalogueInterface) {
-        log.info("XyoBluetoothServer started.")
-        canCreate = true
-        bluetoothWriteCharacteristic.clearWriteResponders()
-
-        // add a responder to the characteristic to wait for a read request
-
-        bluetoothServer.addListener(responderKey, object : BluetoothGattServerCallback() {
-            override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
-                super.onConnectionStateChange(device, status, newState)
-
-                when (newState) {
-                    BluetoothGatt.STATE_CONNECTED -> {
-                        GlobalScope.launch {
-                            val incoming = readPacket(bluetoothWriteCharacteristic, device).await()
-
-                            if (incoming != null && device != null) {
-                                val connectionDevice = XyoBluetoothConnection()
-                                onCreateConnection(connectionDevice)
-                                connectionDevice.onTry()
-
-                                /**
-                                 * We and the size with 0xFFFF to get the unsigned value.
-                                 */
-                                val sizeOfCatalogue = incoming[0].toInt() and 0xFFFF
-                                val catalogue = incoming.copyOfRange(1, sizeOfCatalogue + 1)
-
-                                // check if the request can do the catalogue
-                                if (procedureCatalogueInterface.canDo(catalogue)) {
-                                    val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, catalogue)
-                                    connectionDevice.pipe = pipe
-                                    connectionDevice.onCreate(pipe)
-                                    bluetoothWriteCharacteristic.removeResponder(responderKey)
-                                    return@launch
-                                }
-                                connectionDevice.onFail()
-                            }
+                        if (incoming != null && device != null) {
+                            val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, incoming)
+                            listener?.onPipe(pipe)
                         }
                     }
                 }
             }
-        })
+        }
     }
+
 
 
 
@@ -118,28 +79,13 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
      */
     inner class XyoBluetoothServerPipe(private val bluetoothDevice: BluetoothDevice,
                                        private val writeCharacteristic: XYBluetoothCharacteristic,
-                                       private val catalogue: ByteArray) : XyoNetworkPipe() {
+                                       startingData: ByteArray) : XyoNetworkPipe {
 
         /**
          * The data that the connection was tarted with. This value is set to null since there is no ignition data
          * on the first write from the client.
          */
-        override val initiationData: ByteArray? = null
-
-
-
-        /**
-         * The peer connection object at the other end of the pipe, in this case a BLE central/client.
-         */
-        override val peer: XyoNetworkPeer = object : XyoNetworkPeer() {
-            override fun getRole(): ByteArray {
-                return catalogue
-            }
-
-            override fun getTemporaryPeerId(): Int {
-                return bluetoothDevice.address.hashCode()
-            }
-        }
+        override val initiationData: XyoAdvertisePacket? = XyoAdvertisePacket(startingData)
 
 
 
@@ -328,7 +274,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
      *
      * @return A deferred XYGattStatus with the status of the service being added.
      */
-    fun spinUpServer () : Deferred<XYBluetoothResult<Int>?> = GlobalScope.async {
+    fun initServer () : Deferred<XYBluetoothResult<Int>?> = GlobalScope.async {
         bluetoothWriteCharacteristic.addDescriptor(notifyDescriptor)
         bluetoothService.addCharacteristic(bluetoothWriteCharacteristic)
         bluetoothServer.startServer()
@@ -362,8 +308,8 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
 
     init {
         bluetoothServer.addListener("main$this", mtuListener)
+        bluetoothServer.addListener(responderKey, serverPrimaryEndpoint)
     }
-
 
     companion object {
         const val READ_TIMEOUT = 12_000
@@ -376,7 +322,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) :
         }
 
         private val bluetoothWriteCharacteristic = XYBluetoothCharacteristic(
-                XyoUuids.XYO_WRITE,
+                XyoUuids.XYO_PIPE,
                 BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE ,
                 BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PERMISSION_WRITE
         )
