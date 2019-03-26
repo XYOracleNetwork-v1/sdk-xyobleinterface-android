@@ -142,6 +142,7 @@ class MainActivity : FragmentActivity() {
     private fun initScanner () = GlobalScope.launch {
         XyoBluetoothClient.enable(true)
         XYIBeaconBluetoothDevice.enable(true)
+        XyoSentinelX.enable(true)
         scanner = createNewScanner()
         scanner.start().await()
         scanner.addListener(this.toString(), deviceButtonListener)

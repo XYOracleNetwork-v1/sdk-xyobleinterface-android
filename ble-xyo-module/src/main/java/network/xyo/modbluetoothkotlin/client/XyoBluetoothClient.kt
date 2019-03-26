@@ -285,7 +285,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
                     // masks the byte with 00111111
                     if (xyoManufactorIdToCreator.containsKey(id and 0x3f)) {
-                        xyoManufactorIdToCreator[id]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
+                        xyoManufactorIdToCreator[id and 0x3f]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
                         return
                     }
                 }
