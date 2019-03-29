@@ -15,6 +15,7 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
+import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 import kotlin.coroutines.resume
 
 /**
@@ -49,6 +50,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
     private val serverPrimaryEndpoint = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
+
 
             when (newState) {
                 BluetoothGatt.STATE_CONNECTED -> {
@@ -94,6 +96,11 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
          */
         override fun close(): Deferred<Any?> = GlobalScope.async {
             bluetoothServer.disconnect(bluetoothDevice)
+        }
+
+        // TODO find way to get RSSI here
+        override fun getNetworkHeretics(): Array<XyoBuff> {
+            return arrayOf()
         }
 
 
@@ -278,7 +285,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         bluetoothWriteCharacteristic.addDescriptor(notifyDescriptor)
         bluetoothService.addCharacteristic(bluetoothWriteCharacteristic)
         bluetoothServer.startServer()
-        bluetoothWriteCharacteristic.writeType = BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
+//        bluetoothWriteCharacteristic.writeType = BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
         return@async bluetoothServer.addService(bluetoothService).await()
     }
 
@@ -300,6 +307,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         override fun onMtuChanged(device: BluetoothDevice?, mtu: Int) {
             super.onMtuChanged(device, mtu)
 
+
             mtuS[device.hashCode()] = mtu
         }
     }
@@ -315,10 +323,15 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         const val READ_TIMEOUT = 12_000
         const val ADVERTISEMENT_DELTA_TIMEOUT = 100
 
-        private val notifyDescriptor = object : XYBluetoothDescriptor(NOTIFY_DESCRIPTOR, BluetoothGattDescriptor.PERMISSION_WRITE) {
+        private val notifyDescriptor = object : XYBluetoothDescriptor(NOTIFY_DESCRIPTOR, BluetoothGattDescriptor.PERMISSION_WRITE or BluetoothGattDescriptor.PERMISSION_READ) {
             override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
                 return true
             }
+
+            override fun onReadRequest(device: BluetoothDevice?, offset: Int): XYBluetoothGattServer.XYReadRequest? {
+                return XYBluetoothGattServer.XYReadRequest(byteArrayOf(0x00,0x00), 0)
+            }
+
         }
 
         private val bluetoothWriteCharacteristic = XYBluetoothCharacteristic(

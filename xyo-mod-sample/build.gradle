@@ -35,7 +35,7 @@ dependencies {
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
 
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.5'
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:f5f69ac2ef'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:ef4a3e8591'
     implementation 'com.github.XYOracleNetwork:sdk-ble-android:2791225f1e'
 
     implementation "com.nabinbhandari.android:permissions:3.8"

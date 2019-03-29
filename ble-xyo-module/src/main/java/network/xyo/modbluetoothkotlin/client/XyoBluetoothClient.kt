@@ -17,6 +17,8 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
+import network.xyo.sdkcorekotlin.schemas.XyoSchemas
+import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
 import java.util.*
@@ -77,6 +79,15 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         override fun close(): Deferred<Any?> = GlobalScope.async {
             disconnect()
             this@XyoBluetoothClient.close()
+        }
+
+        override fun getNetworkHeretics(): Array<XyoBuff> {
+            if (rssi != null) {
+                val encodedRssi = XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi.toByte()))
+                return arrayOf(encodedRssi)
+            }
+
+            return arrayOf()
         }
 
         /**
@@ -237,8 +248,8 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
 
     companion object : XYCreator() {
-        const val FIRST_NOTIFY_TIMEOUT = 60_000
-        const val NOTIFY_TIMEOUT = 30_000
+        const val FIRST_NOTIFY_TIMEOUT = 12_000
+        const val NOTIFY_TIMEOUT = 10_000
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 23
 
@@ -274,7 +285,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
                     // masks the byte with 00111111
                     if (xyoManufactorIdToCreator.containsKey(id and 0x3f)) {
-                        xyoManufactorIdToCreator[id]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
+                        xyoManufactorIdToCreator[id and 0x3f]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
                         return
                     }
                 }

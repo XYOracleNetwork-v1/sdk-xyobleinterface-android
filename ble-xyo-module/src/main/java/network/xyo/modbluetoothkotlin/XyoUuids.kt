@@ -9,7 +9,7 @@ object XyoUuids {
     /**
      * The primary GATT service that will be advertised.
      */
-    val XYO_SERVICE = UUID.fromString("d684352e-df36-484e-bc98-2d5398c5593e")!!
+    var XYO_SERVICE = UUID.fromString("d684352e-df36-484e-bc98-2d5398c5593e")!!
 
     /**
      * The GATT characteristic to be written to when creating pipes. This will be in the XYO_SERVICE.

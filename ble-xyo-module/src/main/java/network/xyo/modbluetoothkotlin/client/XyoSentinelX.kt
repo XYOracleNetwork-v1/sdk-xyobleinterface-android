@@ -116,7 +116,8 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
     }
 
     fun resetDevice(password: ByteArray): Deferred<XYBluetoothResult<ByteArray>> {
-        val msg = ByteBuffer.allocate(password.size + 1)
+        val msg = ByteBuffer.allocate(password.size + 2)
+                .put((password.size + 2).toByte())
                 .put((password.size + 1).toByte())
                 .put(password)
                 .array()
@@ -125,7 +126,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
     }
 
     fun getPublicKey () : Deferred<XYBluetoothResult<ByteArray>> {
-        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_PUBLIC_KEY, XyoUuids.XYO_PUBLIC_KEY)
     }
 
     /**

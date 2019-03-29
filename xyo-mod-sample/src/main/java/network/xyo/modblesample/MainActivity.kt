@@ -79,10 +79,6 @@ class MainActivity : FragmentActivity() {
             return byteArrayOf(0x00, 0x00, 0x00, 0x01)
         }
 
-        override fun getNetworlHuerestics(): Array<XyoBuff> {
-            return arrayOf()
-        }
-
         override fun getEncodedCanDo(): ByteArray {
             if (shouldBridge) {
                 return byteArrayOf(0x00, 0x00, 0x00, 0xff.toByte())
@@ -146,6 +142,7 @@ class MainActivity : FragmentActivity() {
     private fun initScanner () = GlobalScope.launch {
         XyoBluetoothClient.enable(true)
         XYIBeaconBluetoothDevice.enable(true)
+        XyoSentinelX.enable(true)
         scanner = createNewScanner()
         scanner.start().await()
         scanner.addListener(this.toString(), deviceButtonListener)
