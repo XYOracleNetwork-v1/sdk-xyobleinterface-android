@@ -7,14 +7,21 @@ import java.nio.ByteBuffer
  *
  * @param chunkSize The number of bytes per chunk.
  * @param bytes The bytes to chunk.
+ * @param sizeOfSize The number of bytes to prepend the size with
  */
-class XyoBluetoothOutgoingPacket (private val chunkSize : Int, bytes : ByteArray) {
+class XyoBluetoothOutgoingPacket (private val chunkSize : Int, bytes : ByteArray, private val sizeOfSize : Int) {
     private var currentIndex = 0
     private val sizeWithBytes = getSizeWithBytes(bytes)
 
     private fun getSizeWithBytes (bytes : ByteArray) : ByteArray {
-        val buff = ByteBuffer.allocate(bytes.size + 4)
-        buff.putInt(bytes.size + 4)
+        val buff = ByteBuffer.allocate(bytes.size + sizeOfSize)
+
+        when (sizeOfSize) {
+            1 -> buff.put((bytes.size + 1).toByte())
+            2 -> buff.putShort((bytes.size + 2).toShort())
+            4 -> buff.putInt(bytes.size + 4)
+        }
+
         buff.put(bytes)
         return buff.array()
     }
