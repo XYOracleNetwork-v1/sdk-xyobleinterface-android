@@ -28,7 +28,7 @@ object XyoUuids {
 
     val XYO_RESET_DEVICE = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564C0b2d")!!
 
-    val XYO_PUBLIC_KEY = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564D0b2d")
+    val XYO_PUBLIC_KEY = UUID.fromString("727a3639-0eb4-4525-b1bc-7fa4564D0b2d")!!
 
     /**
      * The descriptor to use when to manage subscribing to notifications.
