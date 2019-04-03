@@ -31,13 +31,13 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         configureAdvertiserSingle()
     }
 
-    private fun getAdvertiseUuid (uuid: UUID, major: ByteArray, minor: ByteArray): UUID {
-        val uuidString = uuid.toString().dropLast(8)
-        val majorString = major.toHexString().drop(2)
-        val minorString = minor.toHexString().drop(2)
-
-        return UUID.fromString(uuidString + majorString + minorString)
-    }
+//    private fun getAdvertiseUuid (uuid: UUID, major: ByteArray, minor: ByteArray): UUID {
+//        val uuidString = uuid.toString().dropLast(8)
+//        val majorString = major.toHexString().drop(2)
+//        val minorString = minor.toHexString().drop(2)
+//
+//        return UUID.fromString(  minorString + majorString + uuidString)
+//    }
 
     private fun configureAdverserMulti () {
         val encodeMajor = ByteBuffer.allocate(2).putShort(major).array()
@@ -53,11 +53,7 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         val responseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
                 .addServiceUuid(ParcelUuid(
-                        getAdvertiseUuid(
-                                XyoUuids.XYO_SERVICE,
-                                encodeMajor,
-                                encodedMinor
-                        )
+                        XyoUuids.XYO_SERVICE
                 ))
                 .build()
 
