@@ -1,9 +1,12 @@
 package network.xyo.modbluetoothkotlin.client
 
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.*
+import network.xyo.ble.XYCallByVersion
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
@@ -37,11 +40,18 @@ import kotlin.experimental.and
  * @property device The android bluetooth device
  * @property hash The unique hash of the device
  */
-open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash : Int) : XYIBeaconBluetoothDevice(context, scanResult, hash.toString()) {
+open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
+
+    constructor(context: Context, scanResult: XYScanResult, hash : Int): super(context, scanResult, hash.toString())
+
+    constructor(context: Context, scanResult: XYScanResult, hash : Int, transport: Int): super(context, scanResult, hash.toString(), transport)
+
     /**
      * The standard size of the MTU of the connection. This value is used when chunking large amounts of data.
      */
     private var mtu = DEFAULT_MTU
+
+
 
     /**
      * creates a XyoNetworkPipe with THIS bluetooth device.
@@ -173,6 +183,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
                 while (chunknedOutgoingPacket.canSendNext) {
                     val error = findAndWriteCharacteristic(service, characteristic, chunknedOutgoingPacket.getNext()).await().error
+                    delay(500)
                     if (error != null) {
                         cont.resume(error)
                         return@launch
@@ -197,7 +208,6 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         return@async suspendCoroutine<ByteArray?> { cont ->
             val key = this.toString() + Math.random().toString()
 
-            println("HERE")
             centralCallback.addListener(key, object : XYBluetoothGattCallback() {
                 var numberOfPackets = 0
                 var hasResumed = false
@@ -213,7 +223,6 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
 
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     super.onCharacteristicChanged(gatt, characteristic)
-                    println("onCharacteristicChanged")
                     val value = characteristic?.value
 
                     if (characteristic?.uuid == XyoUuids.XYO_PIPE && !hasResumed) {
@@ -251,7 +260,7 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
         const val FIRST_NOTIFY_TIMEOUT = 12_000
         const val NOTIFY_TIMEOUT = 10_000
         const val MAX_MTU = 512
-        const val DEFAULT_MTU = 23
+        const val DEFAULT_MTU = 22
 
         val xyoManufactorIdToCreator = HashMap<Byte, XYCreator>()
 
@@ -290,7 +299,12 @@ open class XyoBluetoothClient(context: Context, scanResult: XYScanResult, hash :
                     }
                 }
 
-                val createdDevice = XyoBluetoothClient(context, scanResult, hash)
+                val createdDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                    XyoBluetoothClient(context, scanResult, hash, BluetoothDevice.TRANSPORT_LE)
+                } else {
+                    XyoBluetoothClient(context, scanResult, hash)
+                }
+
                 foundDevices[hash.toString()] = createdDevice
                 globalDevices[hash.toString()] = createdDevice
             }

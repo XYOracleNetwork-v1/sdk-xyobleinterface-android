@@ -17,7 +17,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
-open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, hash : Int) : XyoBluetoothClient(context, scanResult, hash) {
+open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash : Int) : XyoBluetoothClient(context, scanResult, hash) {
     private val sentinelListeners = HashMap<String, Listener>()
     private var lastButtonPressTime : Long = 0
 
@@ -35,7 +35,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
     }
 
     fun isClaimed () : Boolean {
-        val iBeaconData = scanResult.scanRecord?.getManufacturerSpecificData(0x4c) ?: return true
+        val iBeaconData = scanResult?.scanRecord?.getManufacturerSpecificData(0x4c) ?: return true
 
         if (iBeaconData.size == 23) {
             val flags = iBeaconData[21]
@@ -55,6 +55,7 @@ open class XyoSentinelX(context: Context, private val scanResult: XYScanResult, 
 
         return false
     }
+
 
     override fun onDetect(scanResult: XYScanResult?) {
         if (scanResult != null && isButtonPressed(scanResult) && lastButtonPressTime < System.currentTimeMillis() - 11_000) {
