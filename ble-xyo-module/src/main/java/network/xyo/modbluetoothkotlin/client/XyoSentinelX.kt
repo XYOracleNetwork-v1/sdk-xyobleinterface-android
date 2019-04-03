@@ -127,7 +127,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash : Int) 
     }
 
     fun getPublicKey () : Deferred<XYBluetoothResult<ByteArray>> {
-        return findAndReadCharacteristicBytes(XyoUuids.XYO_PUBLIC_KEY, XyoUuids.XYO_PUBLIC_KEY)
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
     }
 
     /**

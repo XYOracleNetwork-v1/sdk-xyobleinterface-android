@@ -1,10 +1,10 @@
-[logo]: https://www.xy.company/img/home/logo_xy.png
+[logo]: https://cdn.xy.company/img/brand/XY_Logo_GitHub.png
 
-![logo]
+[![logo]](https://xy.company)
 
 # mod-ble-android
 
-[![](https://jitpack.io/v/XYOracleNetwork/mod-ble-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-ble-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev)
+[![](https://jitpack.io/v/XYOracleNetwork/mod-ble-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-ble-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev) [![DepShield Badge](https://depshield.sonatype.org/badges/XYOracleNetwork/mod-ble-android/depshield.svg)](https://depshield.github.io)
 
 | Branches        | Status           |
 | ------------- |:-------------:|
