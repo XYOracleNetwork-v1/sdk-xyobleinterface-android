@@ -8,7 +8,9 @@ import kotlinx.coroutines.async
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYIBeaconAdvertiseDataCreator
 import network.xyo.modbluetoothkotlin.XyoUuids
+import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
+import java.util.*
 
 /**
  * A class for managing XYO advertising.
@@ -29,6 +31,14 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         configureAdvertiserSingle()
     }
 
+    private fun getAdvertiseUuid (uuid: UUID, major: ByteArray, minor: ByteArray): UUID {
+        val uuidString = uuid.toString().dropLast(8)
+        val majorString = major.toHexString().drop(2)
+        val minorString = minor.toHexString().drop(2)
+
+        return UUID.fromString(uuidString + majorString + minorString)
+    }
+
     private fun configureAdverserMulti () {
         val encodeMajor = ByteBuffer.allocate(2).putShort(major).array()
         val encodedMinor = ByteBuffer.allocate(2).putShort(minor).array()
@@ -42,7 +52,13 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
 
         val responseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
-                .addServiceUuid(ParcelUuid(XyoUuids.XYO_SERVICE))
+                .addServiceUuid(ParcelUuid(
+                        getAdvertiseUuid(
+                                XyoUuids.XYO_SERVICE,
+                                encodeMajor,
+                                encodedMinor
+                        )
+                ))
                 .build()
 
         advertiser.advertisingData = advertiseData
