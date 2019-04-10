@@ -26,6 +26,7 @@ import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
+import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -92,12 +93,17 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
         }
 
         override fun getNetworkHeretics(): Array<XyoBuff> {
+            val toReturn = ArrayList<XyoBuff>()
+
             if (rssi != null) {
                 val encodedRssi = XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi.toByte()))
-                return arrayOf(encodedRssi)
+                toReturn.add(encodedRssi)
             }
 
-            return arrayOf()
+            val pwr = XyoBuff.newInstance(XyoSchemas.BLE_POWER_LVL, byteArrayOf(power))
+            toReturn.add(pwr)
+
+            return toReturn.toTypedArray()
         }
 
         /**
