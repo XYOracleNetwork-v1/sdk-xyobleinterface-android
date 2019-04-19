@@ -168,7 +168,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
      * @param listener listener for progress, failed, completed
      */
     fun updateFirmware(fileByteArray: ByteArrayInputStream, listener: XYOtaUpdate.Listener) {
-        val otaFile = fileByteArray?.let { XYOtaFile.getByStream(it) }
+        val otaFile = fileByteArray.let { XYOtaFile.getByStream(it) }
         val updater = XYBluetoothDeviceUpdate(spotaService, this, otaFile)
         updater.addListener("SentinelXDevice", listener)
         updater.start()

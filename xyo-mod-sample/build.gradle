@@ -17,8 +17,11 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
         }
     }
+
     packagingOptions {
         exclude 'META-INF/build.kotlin_module'
+        exclude 'META-INF/atomicfu.kotlin_module'
+        exclude 'META-INF/library_release.kotlin_module'
     }
 
     lintOptions {
@@ -31,16 +34,16 @@ dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
-    implementation "androidx.core:core:1.0.1"
+    implementation 'androidx.core:core:1.1.0-alpha05'
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
 
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.5'
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.0'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:5d97d1a633'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.1'
+    implementation 'com.github.XYOracleNetwork:sdk-ble-android:9cfc1a3c20'
 
     implementation "com.nabinbhandari.android:permissions:3.8"
-    implementation "com.google.android.material:material:1.0.0"
-    implementation "androidx.vectordrawable:vectordrawable:1.0.1"
+    implementation 'com.google.android.material:material:1.1.0-alpha05'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0-alpha01'
 
 
     implementation project(":ble-xyo-module")
