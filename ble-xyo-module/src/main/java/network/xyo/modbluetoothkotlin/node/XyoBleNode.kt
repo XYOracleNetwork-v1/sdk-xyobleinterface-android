@@ -16,11 +16,12 @@ import network.xyo.sdkcorekotlin.repositories.XyoBridgeQueueRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginBlockRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginChainStateRepository
 
-open class XyoBleNode (private val procedureCatalogue: XyoNetworkProcedureCatalogueInterface,
-                       blockRepository: XyoOriginBlockRepository,
-                       stateRepository: XyoOriginChainStateRepository,
-                       bridgeQueueRepository: XyoBridgeQueueRepository,
-                       hashingProvider : XyoHash.XyoHashProvider) : XyoRelayNode(blockRepository, stateRepository, bridgeQueueRepository, hashingProvider) {
+open class XyoBleNode(private val procedureCatalogue: XyoNetworkProcedureCatalogueInterface,
+                      blockRepository: XyoOriginBlockRepository,
+                      stateRepository: XyoOriginChainStateRepository,
+                      bridgeQueueRepository: XyoBridgeQueueRepository,
+                      hashingProvider: XyoHash.XyoHashProvider) :
+        XyoRelayNode(blockRepository, stateRepository, bridgeQueueRepository, hashingProvider) {
 
     private var canBoundWitness = true
 
@@ -54,7 +55,7 @@ open class XyoBleNode (private val procedureCatalogue: XyoNetworkProcedureCatalo
         }
     }
 
-    private suspend fun tryBoundWitnessWithDevice (device : XyoBluetoothClient) {
+    private suspend fun tryBoundWitnessWithDevice(device: XyoBluetoothClient) {
         if (canBoundWitness) {
             canBoundWitness = false
 

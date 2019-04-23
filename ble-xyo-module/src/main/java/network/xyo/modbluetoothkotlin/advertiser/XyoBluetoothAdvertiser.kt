@@ -17,7 +17,12 @@ import java.nio.ByteBuffer
  * @property minor The device minor to advertise
  * @param advertiser The XY advertiser to advertise with.
  */
-class XyoBluetoothAdvertiser (private val major : Short, private val minor : Short, private val advertiser: XYBluetoothAdvertiser) {
+class XyoBluetoothAdvertiser(
+        private val major: Short,
+        private val minor: Short,
+        private val advertiser: XYBluetoothAdvertiser
+) {
+
     /**
      * Start a advertisement cycle
      */
@@ -29,10 +34,18 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         configureAdvertiserSingle()
     }
 
-    private fun configureAdverserMulti () {
+//    private fun getAdvertiseUuid (uuid: UUID, major: ByteArray, minor: ByteArray): UUID {
+//        val uuidString = uuid.toString().dropLast(8)
+//        val majorString = major.toHexString().drop(2)
+//        val minorString = minor.toHexString().drop(2)
+//
+//        return UUID.fromString(  minorString + majorString + uuidString)
+//    }
+
+    private fun configureAdverserMulti() {
         val encodeMajor = ByteBuffer.allocate(2).putShort(major).array()
         val encodedMinor = ByteBuffer.allocate(2).putShort(minor).array()
-        val advertiseData =  XYIBeaconAdvertiseDataCreator.create(
+        val advertiseData = XYIBeaconAdvertiseDataCreator.create(
                 encodeMajor,
                 encodedMinor,
                 XyoUuids.XYO_SERVICE,
@@ -42,7 +55,9 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
 
         val responseData = AdvertiseData.Builder()
                 .setIncludeDeviceName(false)
-                .addServiceUuid(ParcelUuid(XyoUuids.XYO_SERVICE))
+                .addServiceUuid(ParcelUuid(
+                        XyoUuids.XYO_SERVICE
+                ))
                 .build()
 
         advertiser.advertisingData = advertiseData
@@ -52,7 +67,7 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
     }
 
-    private fun configureAdvertiserSingle () {
+    private fun configureAdvertiserSingle() {
         val advertiseData = AdvertiseData.Builder()
                 .addServiceUuid(ParcelUuid(XyoUuids.XYO_SERVICE))
                 .setIncludeDeviceName(true)
@@ -71,7 +86,7 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         advertiser.stopAdvertising()
     }
 
-    fun startAdvertiser () = GlobalScope.async {
+    fun startAdvertiser() = GlobalScope.async {
         return@async advertiser.startAdvertising()
     }
 

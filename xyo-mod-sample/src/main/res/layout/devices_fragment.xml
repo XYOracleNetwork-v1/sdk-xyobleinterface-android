@@ -1,37 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-              android:orientation="vertical"
-              android:layout_width="match_parent"
-              android:layout_height="match_parent">
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical">
 
     <Button
-        android:layout_width="wrap_content"
         android:id="@+id/btn_show_hashes"
-        android:text="Sig Chain"
-        android:layout_height="wrap_content" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/sig_chain" />
 
     <TextView
         android:layout_width="wrap_content"
-        android:textColor="#fff"
-        android:text="Should Be Bridge"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:text="@string/should_be_bridge"
+        android:textColor="#fff" />
 
     <Switch
         android:id="@+id/sw_bridge"
-        android:background="#fff"
         android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
+        android:layout_height="wrap_content"
+        android:background="#fff" />
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
-            android:id="@+id/sw_devices"
-            android:layout_width="match_parent"
-            android:layout_height="match_parent">
+        android:id="@+id/sw_devices"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
 
         <androidx.recyclerview.widget.RecyclerView
-                android:layout_width="match_parent"
-                android:id="@+id/rv_device_list"
-                android:layout_below="@+id/btn_refresh_devices"
-                android:layout_height="match_parent" />
+            android:id="@+id/rv_device_list"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_below="@+id/btn_refresh_devices" />
 
     </androidx.swiperefreshlayout.widget.SwipeRefreshLayout>
 

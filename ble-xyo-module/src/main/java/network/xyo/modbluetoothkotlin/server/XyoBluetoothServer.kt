@@ -1,6 +1,7 @@
 package network.xyo.modbluetoothkotlin.server
 
 import android.bluetooth.*
+import android.util.SparseIntArray
 import kotlinx.coroutines.*
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.peripheral.XYBluetoothResult
@@ -24,12 +25,12 @@ import kotlin.coroutines.resume
  *
  * @property bluetoothServer The Bluetooth GATT server to create the pipe with.
  */
-class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
+class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
 
     var listener: Listener? = null
 
     interface Listener {
-        fun onPipe (pipe: XyoNetworkPipe)
+        fun onPipe(pipe: XyoNetworkPipe)
     }
 
     /**
@@ -38,13 +39,12 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
     private val responderKey = this.toString()
 
 
-
     /**
      * A list of MTU values to device hash codes.
      *
      * mtuS[DEVICE HASH CODE] = MTU of DEVICE
      */
-    private val mtuS = HashMap<Int, Int>()
+    private val mtuS = SparseIntArray()
 
 
     private val serverPrimaryEndpoint = object : BluetoothGattServerCallback() {
@@ -68,8 +68,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
     }
 
 
-
-
     /**
      * This pipe will be creating after a negotiation has occurred. This pipe abstracts a BLE Gatt Server than can
      * talk to a another BLE gatt client enabled device.
@@ -90,7 +88,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         override val initiationData: XyoAdvertisePacket? = XyoAdvertisePacket(startingData)
 
 
-
         /**
          * Closes the pipe. In this case, tells the BLE GATT server to shut disconnect from the device.
          */
@@ -104,7 +101,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         }
 
 
-
         /**
          * Sends data to the other end of the pipe, in this case a BLE central/client. This function wraps sendAwait
          * with device connection functionality (e.g. listening for disconnects).
@@ -114,7 +110,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
          * @return The differed response from the party at the other end of the pipe. If waitForResponse is set to
          * true. The method will return null. Will also return null if there is an error.
          */
-        override fun send(data: ByteArray,  waitForResponse : Boolean) : Deferred<ByteArray?> {
+        override fun send(data: ByteArray, waitForResponse: Boolean): Deferred<ByteArray?> {
             return GlobalScope.async {
                 if (!bluetoothServer.isDeviceConnected(bluetoothDevice)) {
                     return@async null
@@ -122,7 +118,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
 
                 val disconnectKey = "$this disconnect"
 
-                return@async suspendCancellableCoroutine <ByteArray?> { cont ->
+                return@async suspendCancellableCoroutine<ByteArray?> { cont ->
                     GlobalScope.launch {
                         val readValueJob = sendAwait(data, waitForResponse)
 
@@ -150,7 +146,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         }
 
 
-
         /**
          * Sends data to the other end of the pipe, in this case a BLE central/client. NOTE: This function does not
          * check to see if the device is connected or listen for disconnects. That is handled in the send() function.
@@ -160,8 +155,8 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
          * @return The differed response from the party at the other end of the pipe. If waitForResponse is set to
          * true. The method will return null. Will also return null if there is an error.
          */
-        private fun sendAwait (outgoingPacket: ByteArray, waitForResponse: Boolean) = GlobalScope.async {
-            val readJob  = if (waitForResponse) {
+        private fun sendAwait(outgoingPacket: ByteArray, waitForResponse: Boolean) = GlobalScope.async {
+            val readJob = if (waitForResponse) {
                 readPacket(writeCharacteristic, bluetoothDevice)
             } else {
                 null
@@ -178,7 +173,6 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
     }
 
 
-
     /**
      * Sends a packet to the central by sending notifications one after each other. The notifications will chunk the
      * data accordingly at the size of the MTU.
@@ -187,7 +181,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
      * @param characteristic The characteristic to notify that has changed.
      * @param bluetoothDevice The bluetooth device to send the data to.
      */
-    private suspend fun sendPacket (outgoingPacket : ByteArray, characteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<XYBluetoothError?> { cont ->
+    private suspend fun sendPacket(outgoingPacket: ByteArray, characteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<XYBluetoothError?> { cont ->
         val key = "sendPacket $this ${Math.random()}"
         characteristic.value = outgoingPacket
 
@@ -197,7 +191,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
             cont.resume(null)
         }
 
-        val outgoingChuckedPacket = XyoBluetoothOutgoingPacket((mtuS[bluetoothDevice.hashCode()] ?: 24) - 4, outgoingPacket, 4)
+        val outgoingChuckedPacket = XyoBluetoothOutgoingPacket((mtuS[bluetoothDevice.hashCode()]) - 4, outgoingPacket, 4)
 
 
         GlobalScope.launch {
@@ -229,7 +223,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
      * @return The deferred value of the read. If the request timed out, the method will return null. If there was
      * an error reading, will return null.
      */
-    private suspend fun readPacket (writeCharacteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice?) : Deferred<ByteArray?> = GlobalScope.async {
+    private suspend fun readPacket(writeCharacteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice?): Deferred<ByteArray?> = GlobalScope.async {
         return@async suspendCancellableCoroutine<ByteArray?> { cont ->
             val key = "readPacket$this ${Math.random()}"
 
@@ -274,21 +268,19 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
     }
 
 
-
     /**
      * Starts up the server so it can be connected to. NOTE: this does not start advertising. Advertising is
      * handled outside of the scope of this function.
      *
      * @return A deferred XYGattStatus with the status of the service being added.
      */
-    fun initServer () : Deferred<XYBluetoothResult<Int>?> = GlobalScope.async {
+    fun initServer(): Deferred<XYBluetoothResult<Int>?> = GlobalScope.async {
         bluetoothWriteCharacteristic.addDescriptor(notifyDescriptor)
         bluetoothService.addCharacteristic(bluetoothWriteCharacteristic)
         bluetoothServer.startServer()
-//        bluetoothWriteCharacteristic.writeType = BluetoothGattCharacteristic.PROPERTY_WRITE_NO_RESPONSE
+
         return@async bluetoothServer.addService(bluetoothService).await()
     }
-
 
     /**
      * Listens for MTU changes and updates the device to MTU map accordingly.
@@ -299,7 +291,7 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
 
             when (newState) {
                 BluetoothGatt.STATE_DISCONNECTED -> {
-                    mtuS.remove(device.hashCode())
+                    mtuS.delete(device.hashCode())
                 }
             }
         }
@@ -307,11 +299,9 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
         override fun onMtuChanged(device: BluetoothDevice?, mtu: Int) {
             super.onMtuChanged(device, mtu)
 
-
-            mtuS[device.hashCode()] = mtu
+            mtuS.put(device.hashCode(), mtu)
         }
     }
-
 
 
     init {
@@ -329,14 +319,14 @@ class XyoBluetoothServer (private val bluetoothServer : XYBluetoothGattServer) {
             }
 
             override fun onReadRequest(device: BluetoothDevice?, offset: Int): XYBluetoothGattServer.XYReadRequest? {
-                return XYBluetoothGattServer.XYReadRequest(byteArrayOf(0x00,0x00), 0)
+                return XYBluetoothGattServer.XYReadRequest(byteArrayOf(0x00, 0x00), 0)
             }
 
         }
 
         private val bluetoothWriteCharacteristic = XYBluetoothCharacteristic(
                 XyoUuids.XYO_PIPE,
-                BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE ,
+                BluetoothGattCharacteristic.PROPERTY_WRITE or BluetoothGattCharacteristic.PROPERTY_READ or BluetoothGattCharacteristic.PROPERTY_NOTIFY or BluetoothGattCharacteristic.PROPERTY_INDICATE,
                 BluetoothGattCharacteristic.PERMISSION_READ or BluetoothGattCharacteristic.PERMISSION_WRITE
         )
 

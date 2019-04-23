@@ -1,3 +1,7 @@
 <resources>
     <string name="app_name">mod-ble-android</string>
+    <string name="bound_witness">Bound Witness</string>
+    <string name="sig_chain">Sig Chain</string>
+    <string name="should_be_bridge">Should Be Bridge</string>
+    <string name="done">Done!</string>
 </resources>
