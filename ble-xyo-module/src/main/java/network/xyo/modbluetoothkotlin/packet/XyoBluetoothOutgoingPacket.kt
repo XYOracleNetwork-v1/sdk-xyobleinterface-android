@@ -9,11 +9,11 @@ import java.nio.ByteBuffer
  * @param bytes The bytes to chunk.
  * @param sizeOfSize The number of bytes to prepend the size with
  */
-class XyoBluetoothOutgoingPacket (private val chunkSize : Int, bytes : ByteArray, private val sizeOfSize : Int) {
+class XyoBluetoothOutgoingPacket(private val chunkSize: Int, bytes: ByteArray, private val sizeOfSize: Int) {
     private var currentIndex = 0
     private val sizeWithBytes = getSizeWithBytes(bytes)
 
-    private fun getSizeWithBytes (bytes : ByteArray) : ByteArray {
+    private fun getSizeWithBytes(bytes: ByteArray): ByteArray {
         val buff = ByteBuffer.allocate(bytes.size + sizeOfSize)
 
         when (sizeOfSize) {
@@ -29,7 +29,7 @@ class XyoBluetoothOutgoingPacket (private val chunkSize : Int, bytes : ByteArray
     /**
      * If there are more packets to send.
      */
-    val canSendNext : Boolean
+    val canSendNext: Boolean
         get() {
             return sizeWithBytes.size != currentIndex
         }
@@ -38,9 +38,8 @@ class XyoBluetoothOutgoingPacket (private val chunkSize : Int, bytes : ByteArray
     /**
      * Gets the next packet to send.
      */
-    fun getNext() : ByteArray {
+    fun getNext(): ByteArray {
         val packet = ByteArray(Math.min(chunkSize, (sizeWithBytes.size - currentIndex)))
-
 
         for (i in 0 until packet.size) {
             packet[i] = sizeWithBytes[currentIndex]

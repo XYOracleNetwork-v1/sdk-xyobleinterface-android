@@ -8,9 +8,7 @@ import kotlinx.coroutines.async
 import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.gatt.server.XYIBeaconAdvertiseDataCreator
 import network.xyo.modbluetoothkotlin.XyoUuids
-import network.xyo.sdkobjectmodelkotlin.objects.toHexString
 import java.nio.ByteBuffer
-import java.util.*
 
 /**
  * A class for managing XYO advertising.
@@ -19,7 +17,12 @@ import java.util.*
  * @property minor The device minor to advertise
  * @param advertiser The XY advertiser to advertise with.
  */
-class XyoBluetoothAdvertiser (private val major : Short, private val minor : Short, private val advertiser: XYBluetoothAdvertiser) {
+class XyoBluetoothAdvertiser(
+        private val major: Short,
+        private val minor: Short,
+        private val advertiser: XYBluetoothAdvertiser
+) {
+
     /**
      * Start a advertisement cycle
      */
@@ -39,10 +42,10 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
 //        return UUID.fromString(  minorString + majorString + uuidString)
 //    }
 
-    private fun configureAdverserMulti () {
+    private fun configureAdverserMulti() {
         val encodeMajor = ByteBuffer.allocate(2).putShort(major).array()
         val encodedMinor = ByteBuffer.allocate(2).putShort(minor).array()
-        val advertiseData =  XYIBeaconAdvertiseDataCreator.create(
+        val advertiseData = XYIBeaconAdvertiseDataCreator.create(
                 encodeMajor,
                 encodedMinor,
                 XyoUuids.XYO_SERVICE,
@@ -64,7 +67,7 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         advertiser.changeAdvertisingTxLevel(AdvertiseSettings.ADVERTISE_TX_POWER_MEDIUM)
     }
 
-    private fun configureAdvertiserSingle () {
+    private fun configureAdvertiserSingle() {
         val advertiseData = AdvertiseData.Builder()
                 .addServiceUuid(ParcelUuid(XyoUuids.XYO_SERVICE))
                 .setIncludeDeviceName(true)
@@ -83,7 +86,7 @@ class XyoBluetoothAdvertiser (private val major : Short, private val minor : Sho
         advertiser.stopAdvertising()
     }
 
-    fun startAdvertiser () = GlobalScope.async {
+    fun startAdvertiser() = GlobalScope.async {
         return@async advertiser.startAdvertising()
     }
 

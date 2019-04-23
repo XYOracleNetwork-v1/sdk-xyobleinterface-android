@@ -1,35 +1,35 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:orientation="vertical"
     android:layout_width="match_parent"
-    android:padding="16dp"
-    android:layout_height="match_parent">
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="16dp">
 
     <TextView
         android:id="@+id/tx_device_name_title"
-        android:textSize="25sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#fff" />
+        android:textColor="#fff"
+        android:textSize="25sp" />
 
     <TextView
         android:id="@+id/tx_device_type"
-        android:textSize="16sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#fff" />
+        android:textColor="#fff"
+        android:textSize="16sp" />
 
     <TextView
         android:id="@+id/tx_device_rssi"
-        android:textSize="16sp"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:textColor="#fff" />
+        android:textColor="#fff"
+        android:textSize="16sp" />
 
     <Button
-        android:layout_width="wrap_content"
         android:id="@+id/btn_bw"
-        android:text="Bound Witness"
-        android:layout_height="wrap_content" />
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="@string/bound_witness" />
 
 </LinearLayout>

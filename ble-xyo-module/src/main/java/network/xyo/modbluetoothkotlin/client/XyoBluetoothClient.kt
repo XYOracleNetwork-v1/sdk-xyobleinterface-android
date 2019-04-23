@@ -1,29 +1,26 @@
 package network.xyo.modbluetoothkotlin.client
 
+import android.annotation.SuppressLint
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
 import kotlinx.coroutines.*
-import network.xyo.ble.XYCallByVersion
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.peripheral.XYBluetoothGattCallback
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
 import network.xyo.sdkobjectmodelkotlin.objects.toHexString
-import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.ArrayList
@@ -41,22 +38,19 @@ import kotlin.experimental.and
  * @property device The android bluetooth device
  * @property hash The unique hash of the device
  */
-open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
+open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
 
-    constructor(context: Context, scanResult: XYScanResult, hash : Int): super(context, scanResult, hash.toString())
+    constructor(context: Context, scanResult: XYScanResult, hash: Int) : super(context, scanResult, hash.toString())
 
-    constructor(context: Context, scanResult: XYScanResult, hash : Int, transport: Int): super(context, scanResult, hash.toString(), transport)
+    constructor(context: Context, scanResult: XYScanResult, hash: Int, transport: Int) : super(context, scanResult, hash.toString(), transport)
 
     /**
      * The standard size of the MTU of the connection. This value is used when chunking large amounts of data.
      */
     private var mtu = DEFAULT_MTU
 
-
-
     /**
      * creates a XyoNetworkPipe with THIS bluetooth device.
-     *
      * @return A Deferred XyoNetworkPipe if successful, null if not.
      */
     fun createPipe(): Deferred<XyoNetworkPipe?> = GlobalScope.async {
@@ -79,7 +73,7 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
      * @property initiationData The data that the other party sent after connecting (if any).
      * @property rssi The RSSI of the connection. This is used for the RSSI heuristic (if any).
      */
-    inner class XyoBluetoothClientPipe(val rssi : Int?) : XyoNetworkPipe {
+    inner class XyoBluetoothClientPipe(val rssi: Int?) : XyoNetworkPipe {
 
         override val initiationData: XyoAdvertisePacket? = null
 
@@ -122,7 +116,7 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
 
                 val sendAndReceive = GlobalScope.async {
 
-                    val readJob = readIncommoding()
+                    val readJob = readIncoming()
                     val packetError = chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4).await()
 
                     log.info("Sent entire packet to the server.")
@@ -185,10 +179,10 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
     protected fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): Deferred<XYBluetoothError?> = GlobalScope.async {
         return@async suspendCoroutine<XYBluetoothError?> { cont ->
             GlobalScope.launch {
-                val chunknedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
+                val chunkedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
 
-                while (chunknedOutgoingPacket.canSendNext) {
-                    val error = findAndWriteCharacteristic(service, characteristic, chunknedOutgoingPacket.getNext()).await().error
+                while (chunkedOutgoingPacket.canSendNext) {
+                    val error = findAndWriteCharacteristic(service, characteristic, chunkedOutgoingPacket.getNext()).await().error
                     delay(500)
                     if (error != null) {
                         cont.resume(error)
@@ -202,7 +196,6 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
     }
 
 
-
     /**
      * Reads an incoming packet by listening for notifications. This function must be invoked before any notifications
      * are sent or else will return null. Timeout of the first notification is defined with FIRST_NOTIFY_TIMEOUT, in
@@ -210,7 +203,7 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
      *
      * @return A deferred ByteArray of the value read. If there was an error or timeout, will return null.
      */
-    private fun readIncommoding()  : Deferred<ByteArray?> = GlobalScope.async {
+    private fun readIncoming(): Deferred<ByteArray?> = GlobalScope.async {
         return@async suspendCoroutine<ByteArray?> { cont ->
             val key = this.toString() + Math.random().toString()
 
@@ -218,14 +211,14 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
                 var numberOfPackets = 0
                 var hasResumed = false
 
-                var timeoutJob : Job = GlobalScope.launch {
+                var timeoutJob: Job = GlobalScope.launch {
                     delay(FIRST_NOTIFY_TIMEOUT.toLong())
                     hasResumed = true
                     centralCallback.removeListener(key)
                     cont.resume(null)
                 }
 
-                var incomingPacket : XyoBluetoothIncomingPacket? = null
+                var incomingPacket: XyoBluetoothIncomingPacket? = null
 
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
                     super.onCharacteristicChanged(gatt, characteristic)
@@ -235,7 +228,7 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
 
                         if (numberOfPackets == 0 && value != null) {
                             incomingPacket = XyoBluetoothIncomingPacket(value)
-                        } else if (value != null ){
+                        } else if (value != null) {
                             incomingPacket?.addPacket(value)
                         }
 
@@ -268,7 +261,8 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 22
 
-        val xyoManufactorIdToCreator = HashMap<Byte, XYCreator>()
+        @SuppressLint("UseSparseArrays") //SparseArrays cannot use Byte as key
+        val xyoManufactureIdToCreator = HashMap<Byte, XYCreator>()
 
         /**
          * Enable this device to be created on scan.
@@ -289,7 +283,13 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
             }
         }
 
-        override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
+        override fun getDevicesFromScanResult(
+                context: Context,
+                scanResult: XYScanResult,
+                globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>,
+                foundDevices: HashMap<String,
+                        XYBluetoothDevice>
+        ) {
             val hash = scanResult.device?.address.hashCode()
 
             if ((!foundDevices.containsKey(hash.toString())) && (!globalDevices.containsKey(hash.toString()))) {
@@ -299,8 +299,8 @@ open class XyoBluetoothClient: XYIBeaconBluetoothDevice {
                     val id = ad[19]
 
                     // masks the byte with 00111111
-                    if (xyoManufactorIdToCreator.containsKey(id and 0x3f)) {
-                        xyoManufactorIdToCreator[id and 0x3f]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
+                    if (xyoManufactureIdToCreator.containsKey(id and 0x3f)) {
+                        xyoManufactureIdToCreator[id and 0x3f]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
                         return
                     }
                 }

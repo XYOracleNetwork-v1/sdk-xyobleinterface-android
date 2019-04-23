@@ -26,7 +26,7 @@ class XyoPendingBoundWitnessFragment : Fragment() {
             ui {
                 isDone = true
                 pb_circle_bw.visibility = View.GONE
-                tx_bw_error.text = "Done!"
+                tx_bw_error.text = getString(R.string.done)
             }
         }
     }

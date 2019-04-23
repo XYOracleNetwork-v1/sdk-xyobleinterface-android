@@ -8,7 +8,7 @@ import java.nio.ByteBuffer
  *
  * @param firstPacket The first chunk sent by the other party.
  */
-class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
+class XyoBluetoothIncomingPacket(firstPacket: ByteArray) {
     private var packets = ArrayList<ByteArray>()
     private var currentSize = 0
     private var totalSize = 0
@@ -16,7 +16,7 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
     /**
      * If there is no more packets to add.
      */
-    val done : Boolean
+    val done: Boolean
         get() = (currentSize >= totalSize && totalSize != 0)
 
     /**
@@ -25,9 +25,7 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
      * @param toAdd The chunk to add.
      * @return If the packet if finished, it will return the completed packet.
      */
-    fun addPacket (toAdd : ByteArray) : ByteArray? {
-
-
+    fun addPacket(toAdd: ByteArray): ByteArray? {
         if (totalSize == 0 && currentSize == 0) {
             totalSize = ByteBuffer.wrap(toAdd.copyOfRange(0, 4)).int
             packets.add(toAdd.copyOfRange(4, toAdd.size))
@@ -37,7 +35,7 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
 
         packets.add(toAdd)
         currentSize += toAdd.size
-        
+
         if (totalSize == currentSize) {
             return getCurrentBuffer()
         }
@@ -48,7 +46,7 @@ class XyoBluetoothIncomingPacket(firstPacket : ByteArray) {
     /**
      * Get the current packet buffer.
      */
-    fun getCurrentBuffer () : ByteArray {
+    fun getCurrentBuffer(): ByteArray {
         val buff = ByteBuffer.allocate(currentSize - 4)
 
         for (i in 0 until packets.size) {

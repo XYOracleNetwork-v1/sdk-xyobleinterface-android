@@ -22,7 +22,8 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
-open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) : XyoBluetoothClient(context, scanResult, hash) {
+open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
+        XyoBluetoothClient(context, scanResult, hash) {
     private val sentinelListeners = HashMap<String, Listener>()
     private var lastButtonPressTime: Long = 0
 
@@ -62,7 +63,6 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
         return false
     }
 
-
     override fun onDetect(scanResult: XYScanResult?) {
         if (scanResult != null && isButtonPressed(scanResult) && lastButtonPressTime < System.currentTimeMillis() - 11_000) {
             // button of sentinel x is pressed
@@ -75,7 +75,6 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
                 }
             }
 
-
             return
         }
 
@@ -84,7 +83,6 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
 
     /**
      * Changes the password on the remote device if the current password is correct.
-     *
      * @param password The password of the device now.
      * @param newPassword The password to change on the remote device.
      * @return An XYBluetoothError if there was an issue writing the packet.
@@ -102,7 +100,6 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
 
     /**
      * Changes the bound witness data on the remote device
-     *
      * @param boundWitnessData The data to include in tche remote devices bound witness.
      * @param password The password of the device to so it can write the boundWitnessData
      * @return An XYBluetoothError if there was an issue writing the packet.
@@ -122,6 +119,11 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
         return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_CHANGE_BW_DATA)
     }
 
+    /**
+     * Reset the device.
+     * @param password The password of the device to so it can write the boundWitnessData
+     * @return An XYBluetoothError if there was an issue writing the packet.
+     */
     fun resetDevice(password: ByteArray): Deferred<XYBluetoothResult<ByteArray>> {
         val msg = ByteBuffer.allocate(password.size + 2)
                 .put((password.size + 2).toByte())
@@ -132,12 +134,15 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
         return findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_RESET_DEVICE, msg)
     }
 
+    /**
+     * Get the public Key
+     */
     fun getPublicKey(): Deferred<XYBluetoothResult<ByteArray>> {
         return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
     }
 
     /**
-     * Unlock the device.
+     * Lock the device.
      */
     fun lock() = connection {
         return@connection primary.lock.set(XY4BluetoothDevice.DefaultLockCode).await()
@@ -182,13 +187,19 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
 
         fun enable(enable: Boolean) {
             if (enable) {
-                XyoBluetoothClient.xyoManufactorIdToCreator[0x01] = this
+                xyoManufactureIdToCreator[0x01] = this
             } else {
-                XyoBluetoothClient.xyoManufactorIdToCreator.remove(0x01)
+                xyoManufactureIdToCreator.remove(0x01)
             }
         }
 
-        override fun getDevicesFromScanResult(context: Context, scanResult: XYScanResult, globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>, foundDevices: HashMap<String, XYBluetoothDevice>) {
+        override fun getDevicesFromScanResult(
+                context: Context,
+                scanResult: XYScanResult,
+                globalDevices: ConcurrentHashMap<String, XYBluetoothDevice>,
+                foundDevices: HashMap<String,
+                        XYBluetoothDevice>
+        ) {
             val hash = scanResult.device?.address.hashCode()
             val createdDevice = XyoSentinelX(context, scanResult, hash)
             foundDevices[hash.toString()] = createdDevice
