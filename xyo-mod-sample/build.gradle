@@ -38,8 +38,8 @@ dependencies {
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
 
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.6'
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.2'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:a570ffd454'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.3'
+    implementation 'com.github.XYOracleNetwork:sdk-ble-android:265a6a77cf'
 
     implementation "com.nabinbhandari.android:permissions:3.8"
     implementation 'com.google.android.material:material:1.1.0-alpha06'
