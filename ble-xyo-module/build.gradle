@@ -46,7 +46,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.3'
+    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.2'
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.6'
     implementation 'com.github.XYOracleNetwork:sdk-ble-android:265a6a77cf'
 
