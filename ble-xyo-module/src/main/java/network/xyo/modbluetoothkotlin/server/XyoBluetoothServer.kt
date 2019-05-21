@@ -17,7 +17,6 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
-import kotlin.coroutines.resume
 
 /**
  * A BLE GATT Server than can create XyoNetworkPipes. This pipe can be used with the sdk-core-kotlin to talk to
@@ -126,7 +125,10 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                             override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
                                 if (cont.isActive && newState == BluetoothGatt.STATE_DISCONNECTED && device?.address == bluetoothDevice.address) {
                                     bluetoothServer.removeListener(disconnectKey)
-                                    cont.resume(null)
+                                    val idempotent = cont.tryResume(null)
+                                    idempotent?.let {
+                                        cont.completeResume(it)
+                                    }
                                     coroutineContext.cancel()
                                     readValueJob.cancel()
                                     return
@@ -139,7 +141,10 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                         val readValue = readValueJob.await()
                         bluetoothServer.removeListener(disconnectKey)
 
-                        cont.resume(readValue)
+                        val idempotent = cont.tryResume(readValue)
+                        idempotent?.let {
+                            cont.completeResume(it)
+                        }
                     }
                 }
             }
@@ -188,7 +193,11 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
         val timeoutResume = GlobalScope.launch {
             delay(READ_TIMEOUT.toLong())
             characteristic.removeReadResponder(key)
-            cont.resume(null)
+
+            val idempotent = cont.tryResume(null)
+            idempotent?.let {
+                cont.completeResume(it)
+            }
         }
 
         val outgoingChuckedPacket = XyoBluetoothOutgoingPacket((mtuS[bluetoothDevice.hashCode()]) - 4, outgoingPacket, 4)
@@ -202,12 +211,18 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
 
                 if (bluetoothServer.sendNotification(bluetoothWriteCharacteristic, true, bluetoothDevice).await()?.value != 0) {
                     timeoutResume.cancel()
-                    cont.resume(null)
+                    val idempotent = cont.tryResume(null)
+                    idempotent?.let {
+                        cont.completeResume(it)
+                    }
                 }
 
                 if (!outgoingChuckedPacket.canSendNext) {
                     timeoutResume.cancel()
-                    cont.resume(null)
+                    val idempotent = cont.tryResume(null)
+                    idempotent?.let {
+                        cont.completeResume(it)
+                    }
                 }
             }
         }
@@ -230,7 +245,10 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
             val timeoutResume = GlobalScope.launch {
                 delay(READ_TIMEOUT.toLong())
                 writeCharacteristic.removeResponder(key)
-                cont.resume(null)
+                val idempotent = cont.tryResume(null)
+                idempotent?.let {
+                    cont.completeResume(it)
+                }
             }
 
             writeCharacteristic.addWriteResponder(key, object : XYBluetoothWriteResponder {
@@ -245,7 +263,10 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                             if (incomingPacket?.done == true) {
                                 writeCharacteristic.removeResponder(key)
                                 timeoutResume.cancel()
-                                cont.resume(incomingPacket?.getCurrentBuffer())
+                                val idempotent = cont.tryResume(incomingPacket?.getCurrentBuffer())
+                                idempotent?.let {
+                                    cont.completeResume(it)
+                                }
                             }
                         } else if (writeRequestValue != null) {
                             val finalPacket = incomingPacket?.addPacket(writeRequestValue)
@@ -253,7 +274,11 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                             if (finalPacket != null) {
                                 writeCharacteristic.removeResponder(key)
                                 timeoutResume.cancel()
-                                cont.resume(finalPacket)
+
+                                val idempotent = cont.tryResume(finalPacket)
+                                idempotent?.let {
+                                    cont.completeResume(it)
+                                }
                             }
                         }
 
