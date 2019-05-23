@@ -182,7 +182,12 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
                 val chunkedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
 
                 while (chunkedOutgoingPacket.canSendNext) {
-                    val error = findAndWriteCharacteristic(service, characteristic, chunkedOutgoingPacket.getNext()).await().error
+                    val error = findAndWriteCharacteristic(
+                            service,
+                            characteristic,
+                            chunkedOutgoingPacket.getNext(),
+                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                    ).await().error
                     delay(500)
                     if (error != null) {
                         cont.resume(error)

@@ -132,8 +132,10 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
                 .put(password)
                 .array()
 
-        return findAndWriteCharacteristic(XyoUuids.XYO_SERVICE,
-                XyoUuids.XYO_RESET_DEVICE, msg,
+        return findAndWriteCharacteristic(
+                XyoUuids.XYO_SERVICE,
+                XyoUuids.XYO_RESET_DEVICE,
+                msg,
                 BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
     }
 
