@@ -19,7 +19,7 @@ git clone git@github.com:XYOracleNetwork/mod-ble-android.git
 
 ```gradle
 dependencies {
-    implementation 'com.github.XYOracleNetwork:mod-ble-android:v0.1.0-beta'
+    implementation 'com.github.XYOracleNetwork:mod-ble-android:0.1.1-beta.3'
 }
 ```
 

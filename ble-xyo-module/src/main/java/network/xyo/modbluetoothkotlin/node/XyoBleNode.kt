@@ -10,14 +10,13 @@ import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.hashing.XyoHash
 import network.xyo.sdkcorekotlin.network.XyoNetworkHandler
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkcorekotlin.network.XyoProcedureCatalog
-
+import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
 import network.xyo.sdkcorekotlin.node.XyoRelayNode
 import network.xyo.sdkcorekotlin.repositories.XyoBridgeQueueRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginBlockRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginChainStateRepository
 
-open class XyoBleNode(private val procedureCatalogue: XyoProcedureCatalog,
+open class XyoBleNode(private val procedureCatalogue: XyoNetworkProcedureCatalogueInterface,
                       blockRepository: XyoOriginBlockRepository,
                       stateRepository: XyoOriginChainStateRepository,
                       bridgeQueueRepository: XyoBridgeQueueRepository,
