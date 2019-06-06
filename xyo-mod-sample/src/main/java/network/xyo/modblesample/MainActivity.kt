@@ -28,7 +28,7 @@ import network.xyo.sdkcorekotlin.crypto.signing.ecdsa.secp256k.XyoSha256WithSecp
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.network.XyoNetworkHandler
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkcorekotlin.network.XyoNetworkProcedureCatalogueInterface
+import network.xyo.sdkcorekotlin.network.XyoProcedureCatalog
 import network.xyo.sdkcorekotlin.node.XyoNodeListener
 import network.xyo.sdkcorekotlin.node.XyoRelayNode
 import network.xyo.sdkcorekotlin.persist.XyoInMemoryStorageProvider
@@ -65,7 +65,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private val boundWitnessCatalogue = object : XyoNetworkProcedureCatalogueInterface {
+    private val boundWitnessCatalogue = object : XyoProcedureCatalog {
         override fun canDo(byteArray: ByteArray): Boolean {
             if (shouldBridge) {
                 return true
