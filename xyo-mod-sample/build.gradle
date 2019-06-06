@@ -35,11 +35,9 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    api 'network.xyo:sdk-core-kotlin:1.1.1'
+    api 'network.xyo:sdk-core-kotlin:1.1.14'
     api 'network.xyo:sdk-base-android:2.0.81'
-    api 'network.xyo:sdk-ble-android:2.0.79'
-
-    implementation 'com.github.XYOracleNetwork:sdk-objectmodel-kotlin:0.1.1-beta.4'
+    api 'network.xyo:sdk-ble-android:2.0.87'
 
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
