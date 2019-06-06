@@ -19,6 +19,8 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
+import network.xyo.sdkobjectmodelkotlin.structure.XyoObjectStructure
+import network.xyo.sdkobjectmodelkotlin.toHexString
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.ArrayList
@@ -84,15 +86,15 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
             this@XyoBluetoothClient.close()
         }
 
-        override fun getNetworkHeretics(): Array<XyoBuff> {
-            val toReturn = ArrayList<XyoBuff>()
+        override fun getNetworkHeretics(): Array<XyoObjectStructure> {
+            val toReturn = ArrayList<XyoObjectStructure>()
 
             if (rssi != null) {
-                val encodedRssi = XyoBuff.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi.toByte()))
+                val encodedRssi = XyoObjectStructure.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi.toByte()))
                 toReturn.add(encodedRssi)
             }
 
-            val pwr = XyoBuff.newInstance(XyoSchemas.BLE_POWER_LVL, byteArrayOf(power))
+            val pwr = XyoObjectStructure.newInstance(XyoSchemas.BLE_POWER_LVL, byteArrayOf(power))
             toReturn.add(pwr)
 
             return toReturn.toTypedArray()

@@ -10,7 +10,7 @@ import network.xyo.modblesample.R
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
-import network.xyo.sdkobjectmodelkotlin.objects.toHexString
+import network.xyo.sdkobjectmodelkotlin.toHexString
 
 class HashAdapter (var listener : HashAdapter.Listener?) : RecyclerView.Adapter<HashAdapter.ViewHolder>() {
     private val hasher = XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")

@@ -16,7 +16,7 @@ import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkobjectmodelkotlin.buffer.XyoBuff
+import network.xyo.sdkobjectmodelkotlin.structure.XyoObjectStructure
 
 /**
  * A BLE GATT Server than can create XyoNetworkPipes. This pipe can be used with the sdk-core-kotlin to talk to
@@ -95,7 +95,7 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
         }
 
         // TODO find way to get RSSI here
-        override fun getNetworkHeretics(): Array<XyoBuff> {
+        override fun getNetworkHeretics(): Array<XyoObjectStructure> {
             return arrayOf()
         }
 
