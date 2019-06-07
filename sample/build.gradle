@@ -7,7 +7,7 @@ group = 'network.xyo'
 android {
     compileSdkVersion 28
     defaultConfig {
-        applicationId "network.xyo.modblesample"
+        applicationId "network.xyo.bleinterface.sample"
         minSdkVersion 21
         targetSdkVersion 28
         versionCode 1
@@ -51,7 +51,7 @@ dependencies {
     implementation 'androidx.vectordrawable:vectordrawable:1.1.0-beta02'
 
     implementation 'org.jetbrains:annotations:17.0.0'
-    implementation project(":ble-xyo-module")
+    implementation project(':library')
 }
 repositories {
     mavenCentral()

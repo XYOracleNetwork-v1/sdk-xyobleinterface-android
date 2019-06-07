@@ -4,9 +4,14 @@
 
 # sdk-xyobleinterface-android
 
-[![](https://jitpack.io/v/XYOracleNetwork/mod-ble-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-ble-android) [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev) [![Known Vulnerabilities](https://snyk.io/test/github/XYOracleNetwork/sdk-xyobleinterface-android/badge.svg)](https://snyk.io/test/github/XYOracleNetwork/sdk-xyobleinterface-android)
+[![](https://jitpack.io/v/XYOracleNetwork/mod-ble-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-ble-android)
+[![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev)
+[![Known Vulnerabilities](https://snyk.io/test/github/XYOracleNetwork/sdk-xyobleinterface-android/badge.svg)](https://snyk.io/test/github/XYOracleNetwork/sdk-xyobleinterface-android)
 
-[![Build Status](https://travis-ci.org/XYOracleNetwork/sdk-xyobleinterface-android.svg?branch=master)](https://travis-ci.org/XYOracleNetwork/sdk-xyobleinterface-android) [![Maintainability](https://api.codeclimate.com/v1/badges/af641257b27ecea22a9f/maintainability)](https://codeclimate.com/github/XYOracleNetwork/sdk-xyobleinterface-android/maintainability) [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=XYOracleNetwork_sdk-xyobleinterface-android&metric=alert_status)](https://sonarcloud.io/dashboard?id=XYOracleNetwork_sdk-xyobleinterface-android) [![BCH compliance](https://bettercodehub.com/edge/badge/XYOracleNetwork/sdk-xyobleinterface-android?branch=master)](https://bettercodehub.com/)
+[![Build Status](https://travis-ci.org/XYOracleNetwork/sdk-xyobleinterface-android.svg?branch=master)](https://travis-ci.org/XYOracleNetwork/sdk-xyobleinterface-android)
+[![Maintainability](https://api.codeclimate.com/v1/badges/c574c6de0ea4049be0c3/maintainability)](https://codeclimate.com/github/XYOracleNetwork/sdk-xyobleinterface-android/maintainability)
+[![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=XYOracleNetwork_sdk-xyobleinterface-android&metric=alert_status)](https://sonarcloud.io/dashboard?id=XYOracleNetwork_sdk-xyobleinterface-android)
+[![BCH compliance](https://bettercodehub.com/edge/badge/XYOracleNetwork/sdk-xyobleinterface-android?branch=master)](https://bettercodehub.com/)
 
 A basic network module that complies to the XYO Network Provider Interface.
 
