@@ -1,5 +1,6 @@
 package network.xyo.modbluetoothkotlin.client
 
+import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import kotlinx.coroutines.*
 import network.xyo.ble.devices.XY4BluetoothDevice
@@ -131,7 +132,11 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
                 .put(password)
                 .array()
 
-        return findAndWriteCharacteristic(XyoUuids.XYO_SERVICE, XyoUuids.XYO_RESET_DEVICE, msg)
+        return findAndWriteCharacteristic(
+                XyoUuids.XYO_SERVICE,
+                XyoUuids.XYO_RESET_DEVICE,
+                msg,
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
     }
 
     /**
