@@ -2,16 +2,18 @@ apply plugin: 'com.github.dcendents.android-maven'
 apply plugin: 'com.android.library'
 apply plugin: 'kotlin-android'
 
+group = 'network.xyo'
+
 buildscript {
     repositories {
+        jcenter()
         mavenCentral()
         mavenLocal()
-        jcenter()
         google()
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:3.3.2'
+        classpath 'com.android.tools.build:gradle:3.4.1'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlinVersion"
         classpath "com.github.dcendents:android-maven-gradle-plugin:2.1"
     }
@@ -46,9 +48,11 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.2'
-    implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.6'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:e4282a8acc'
+    api 'network.xyo:sdk-core-kotlin:1.1.14'
+    api 'network.xyo:sdk-base-android:2.0.81'
+    api 'network.xyo:sdk-ble-android:2.0.87'
+
+    api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
 
     testImplementation 'junit:junit:4.13-beta-2'
     androidTestImplementation 'com.android.support.test:runner:1.0.2'
@@ -56,6 +60,7 @@ dependencies {
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 }
 repositories {
+    jcenter()
     mavenCentral()
     maven {
         url 'https://jitpack.io'

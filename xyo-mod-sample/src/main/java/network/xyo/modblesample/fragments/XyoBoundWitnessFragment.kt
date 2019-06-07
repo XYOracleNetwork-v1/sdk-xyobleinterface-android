@@ -15,7 +15,7 @@ import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitnessVerify
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
-import network.xyo.sdkobjectmodelkotlin.objects.toHexString
+import network.xyo.sdkobjectmodelkotlin.toHexString
 
 class XyoBoundWitnessFragment : Fragment() {
     interface BoundWitnessItemResolver {

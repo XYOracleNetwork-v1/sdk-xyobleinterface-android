@@ -2,6 +2,8 @@ apply plugin: 'com.android.application'
 apply plugin: 'kotlin-android'
 apply plugin: 'kotlin-android-extensions'
 
+group = 'network.xyo'
+
 android {
     compileSdkVersion 28
     defaultConfig {
@@ -32,18 +34,21 @@ android {
 
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
+
+    api 'network.xyo:sdk-core-kotlin:1.1.14'
+    api 'network.xyo:sdk-base-android:2.0.81'
+    api 'network.xyo:sdk-ble-android:2.0.87'
+
     implementation "org.jetbrains.kotlin:kotlin-stdlib-jdk8:$kotlinVersion"
 
     implementation 'androidx.core:core:1.2.0-alpha01'
     implementation "androidx.legacy:legacy-support-v4:1.0.0"
 
     implementation 'com.github.XYOracleNetwork:sdk-core-android:1.2.6'
-    implementation 'com.github.XYOracleNetwork:sdk-core-kotlin:0.1.4-beta.2'
-    implementation 'com.github.XYOracleNetwork:sdk-ble-android:e4282a8acc'
 
     implementation "com.nabinbhandari.android:permissions:3.8"
-    implementation 'com.google.android.material:material:1.1.0-alpha06'
-    implementation 'androidx.vectordrawable:vectordrawable:1.1.0-beta01'
+    implementation 'com.google.android.material:material:1.1.0-alpha07'
+    implementation 'androidx.vectordrawable:vectordrawable:1.1.0-beta02'
 
     implementation 'org.jetbrains:annotations:17.0.0'
     implementation project(":ble-xyo-module")
