@@ -140,13 +140,6 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
     }
 
     /**
-     * Get the public Key
-     */
-    fun getPublicKey(): Deferred<XYBluetoothResult<ByteArray>> {
-        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
-    }
-
-    /**
      * Lock the device.
      */
     fun lock() = connection {
@@ -192,9 +185,9 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
 
         fun enable(enable: Boolean) {
             if (enable) {
-                xyoManufactureIdToCreator[0x01] = this
+                xyoManufactureIdToCreator[XyoBluetoothClientDeviceType.SentinelX.raw] = this
             } else {
-                xyoManufactureIdToCreator.remove(0x01)
+                xyoManufactureIdToCreator.remove(XyoBluetoothClientDeviceType.SentinelX.raw)
             }
         }
 

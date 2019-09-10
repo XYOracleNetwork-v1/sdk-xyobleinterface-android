@@ -12,6 +12,7 @@ import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.peripheral.XYBluetoothGattCallback
+import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.ble.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
@@ -29,6 +30,12 @@ import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
 import kotlin.experimental.and
 
+enum class XyoBluetoothClientDeviceType(val raw: Byte){
+    SentinelX(0x01),
+    IosAppX(0x02),
+    BridgeX(0x03),
+    AndroidAppX(0x04),
+}
 
 /**
  * A Bluetooth client that can create a XyoNetworkPipe. This pipe can be used with the sdk-core-kotlin to talk to
@@ -61,6 +68,13 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
         mtu = (requestMtu.value ?: mtu) - 3
 
         return@async XyoBluetoothClientPipe(rssi)
+    }
+
+    /**
+     * Get the public Key
+     */
+    fun getPublicKey(): Deferred<XYBluetoothResult<ByteArray>> {
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
     }
 
 
@@ -266,6 +280,8 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
         const val MAX_MTU = 512
         const val DEFAULT_MTU = 22
 
+        const val DEVICE_TYPE_MASK = 0x3f.toByte()
+
         @SuppressLint("UseSparseArrays") //SparseArrays cannot use Byte as key
         val xyoManufactureIdToCreator = HashMap<Byte, XYCreator>()
 
@@ -304,8 +320,8 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
                     val id = ad[19]
 
                     // masks the byte with 00111111
-                    if (xyoManufactureIdToCreator.containsKey(id and 0x3f)) {
-                        xyoManufactureIdToCreator[id and 0x3f]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
+                    if (xyoManufactureIdToCreator.containsKey(id and DEVICE_TYPE_MASK)) {
+                        xyoManufactureIdToCreator[id and DEVICE_TYPE_MASK]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
                         return
                     }
                 }
