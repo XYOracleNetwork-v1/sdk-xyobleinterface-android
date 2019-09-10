@@ -20,8 +20,7 @@ import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
 import network.xyo.modblesample.fragments.*
 import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
-import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
-import network.xyo.modbluetoothkotlin.client.XyoSentinelX
+import network.xyo.modbluetoothkotlin.client.*
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.crypto.signing.ecdsa.secp256k.XyoSha256WithSecp256K
@@ -47,6 +46,7 @@ import kotlin.collections.ArrayList
  * app is not recommended to be used as a production XYO Enabled Device but rather a tool for development because
  * that state of the node will not persist.
  */
+@kotlin.ExperimentalUnsignedTypes
 class MainActivity : FragmentActivity() {
     private var shouldBridge = false
     private lateinit var scanner: XYSmartScanModern
@@ -130,6 +130,9 @@ class MainActivity : FragmentActivity() {
             initServer()
             XyoBluetoothClient.enable(true)
             XyoSentinelX.enable(true)
+            XyoBridgeX.enable(true)
+            XyoAndroidAppX.enable(true)
+            XyoIosAppX.enable(true)
             XyoSha256WithSecp256K.enable()
         }
     }
@@ -142,6 +145,9 @@ class MainActivity : FragmentActivity() {
         XyoBluetoothClient.enable(true)
         XYIBeaconBluetoothDevice.enable(true)
         XyoSentinelX.enable(true)
+        XyoBridgeX.enable(true)
+        XyoAndroidAppX.enable(true)
+        XyoIosAppX.enable(true)
         scanner = createNewScanner()
         scanner.start().await()
         scanner.addListener(this.toString(), deviceButtonListener)
