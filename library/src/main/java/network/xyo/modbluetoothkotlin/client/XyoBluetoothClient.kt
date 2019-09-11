@@ -332,8 +332,8 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
                     XyoBluetoothClient(context, scanResult, hash)
                 }
 
-                foundDevices[hash.toString()] = createdDevice
-                globalDevices[hash.toString()] = createdDevice
+                foundDevices[createdDevice.id] = createdDevice
+                globalDevices[createdDevice.id] = createdDevice
             }
         }
     }
