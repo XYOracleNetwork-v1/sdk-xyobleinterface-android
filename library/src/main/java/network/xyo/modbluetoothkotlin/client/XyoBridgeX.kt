@@ -45,8 +45,8 @@ open class XyoBridgeX(context: Context, scanResult: XYScanResult, hash: Int) :
         ) {
             val hash = scanResult.device?.address.hashCode()
             val createdDevice = XyoBridgeX(context, scanResult, hash)
-            foundDevices[hash.toString()] = createdDevice
-            globalDevices[hash.toString()] = createdDevice
+            foundDevices[createdDevice.id] = createdDevice
+            globalDevices[createdDevice.id] = createdDevice
         }
     }
 }

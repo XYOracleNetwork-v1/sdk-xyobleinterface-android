@@ -200,8 +200,8 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
         ) {
             val hash = scanResult.device?.address.hashCode()
             val createdDevice = XyoSentinelX(context, scanResult, hash)
-            foundDevices[hash.toString()] = createdDevice
-            globalDevices[hash.toString()] = createdDevice
+            foundDevices[createdDevice.id] = createdDevice
+            globalDevices[createdDevice.id] = createdDevice
         }
     }
 }
