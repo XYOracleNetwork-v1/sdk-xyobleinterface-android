@@ -7,6 +7,7 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
 import kotlinx.coroutines.*
+import network.xyo.ble.devices.XYAppleBluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYCreator
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
@@ -22,6 +23,7 @@ import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.structure.XyoObjectStructure
 import network.xyo.sdkobjectmodelkotlin.toHexString
+import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.collections.ArrayList
@@ -45,11 +47,12 @@ enum class XyoBluetoothClientDeviceType(val raw: Byte){
  * @property device The android bluetooth device
  * @property hash The unique hash of the device
  */
+@kotlin.ExperimentalUnsignedTypes
 open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
 
-    constructor(context: Context, scanResult: XYScanResult, hash: Int) : super(context, scanResult, hash.toString())
+    constructor(context: Context, scanResult: XYScanResult, hash: String) : super(context, scanResult, hash)
 
-    constructor(context: Context, scanResult: XYScanResult, hash: Int, transport: Int) : super(context, scanResult, hash.toString(), transport)
+    constructor(context: Context, scanResult: XYScanResult, hash: String, transport: Int) : super(context, scanResult, hash, transport)
 
     /**
      * The standard size of the MTU of the connection. This value is used when chunking large amounts of data.
@@ -304,6 +307,34 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
             }
         }
 
+        private fun majorFromScanResult(scanResult: XYScanResult): UShort? {
+            val bytes = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)
+            return if (bytes != null) {
+                val buffer = ByteBuffer.wrap(bytes)
+                buffer.getShort(18).toUShort()
+            } else {
+                null
+            }
+        }
+
+        private fun minorFromScanResult(scanResult: XYScanResult): UShort? {
+            val bytes = scanResult.scanRecord?.getManufacturerSpecificData(XYAppleBluetoothDevice.MANUFACTURER_ID)
+            return if (bytes != null) {
+                val buffer = ByteBuffer.wrap(bytes)
+                buffer.getShort(20).toUShort()
+            } else {
+                null
+            }
+        }
+
+        internal fun hashFromScanResult(scanResult: XYScanResult): String {
+            val uuid = iBeaconUuidFromScanResult(scanResult)
+            val major = majorFromScanResult(scanResult)
+            val minor = minorFromScanResult(scanResult)
+
+            return "$uuid:$major:$minor"
+        }
+
         override fun getDevicesFromScanResult(
                 context: Context,
                 scanResult: XYScanResult,
@@ -311,29 +342,34 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
                 foundDevices: HashMap<String,
                         XYBluetoothDevice>
         ) {
-            val hash = scanResult.device?.address.hashCode()
+            val hash = hashFromScanResult(scanResult)
 
-            if ((!foundDevices.containsKey(hash.toString())) && (!globalDevices.containsKey(hash.toString()))) {
-                val ad = scanResult.scanRecord?.getManufacturerSpecificData(0x4c)
 
-                if (ad?.size == 23) {
-                    val id = ad[19]
+            val ad = scanResult.scanRecord?.getManufacturerSpecificData(0x4c)
 
-                    // masks the byte with 00111111
-                    if (xyoManufactureIdToCreator.containsKey(id and DEVICE_TYPE_MASK)) {
-                        xyoManufactureIdToCreator[id and DEVICE_TYPE_MASK]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
-                        return
-                    }
+            if (ad?.size == 23) {
+                val id = ad[19]
+
+                // masks the byte with 00111111
+                if (xyoManufactureIdToCreator.containsKey(id and DEVICE_TYPE_MASK)) {
+                    xyoManufactureIdToCreator[id and DEVICE_TYPE_MASK]?.getDevicesFromScanResult(context, scanResult, globalDevices, foundDevices)
+                    return
                 }
+            }
 
-                val createdDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
-                    XyoBluetoothClient(context, scanResult, hash, BluetoothDevice.TRANSPORT_LE)
-                } else {
-                    XyoBluetoothClient(context, scanResult, hash)
-                }
+            val createdDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                XyoBluetoothClient(context, scanResult, hash, BluetoothDevice.TRANSPORT_LE)
+            } else {
+                XyoBluetoothClient(context, scanResult, hash)
+            }
 
-                foundDevices[createdDevice.id] = createdDevice
-                globalDevices[createdDevice.id] = createdDevice
+            val foundDevice = foundDevices[hash]
+            if (foundDevice != null) {
+                foundDevice.rssi = scanResult.rssi
+                foundDevice.updateBluetoothDevice(scanResult.device)
+            } else {
+                foundDevices[hash] = createdDevice
+                globalDevices[hash] = createdDevice
             }
         }
     }

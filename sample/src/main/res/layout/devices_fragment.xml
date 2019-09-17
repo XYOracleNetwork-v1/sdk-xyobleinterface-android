@@ -6,21 +6,32 @@
 
     <Button
         android:id="@+id/btn_show_hashes"
-        android:layout_width="wrap_content"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:text="@string/sig_chain" />
 
-    <TextView
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/should_be_bridge"
-        android:textColor="#fff" />
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:orientation="horizontal"
+        android:background="#fff"
+        android:textAlignment="center"
+        android:layout_margin="4dp"
+        android:padding="8dp"
+        android:layout_height="wrap_content">
 
-    <Switch
-        android:id="@+id/sw_bridge"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:background="#fff" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="@string/should_be_bridge"
+            android:textColor="#000" />
+
+        <Switch
+            android:id="@+id/sw_bridge"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:textColor="#000"/>
+
+    </LinearLayout>
 
     <androidx.swiperefreshlayout.widget.SwipeRefreshLayout
         android:id="@+id/sw_devices"

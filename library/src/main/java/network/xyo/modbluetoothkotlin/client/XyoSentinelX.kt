@@ -23,7 +23,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
-open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
+open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String) :
         XyoBluetoothClient(context, scanResult, hash) {
     private val sentinelListeners = HashMap<String, Listener>()
     private var lastButtonPressTime: Long = 0
@@ -198,10 +198,16 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: Int) :
                 foundDevices: HashMap<String,
                         XYBluetoothDevice>
         ) {
-            val hash = scanResult.device?.address.hashCode()
+            val hash = hashFromScanResult(scanResult)
             val createdDevice = XyoSentinelX(context, scanResult, hash)
-            foundDevices[createdDevice.id] = createdDevice
-            globalDevices[createdDevice.id] = createdDevice
+            val foundDevice = foundDevices[hash]
+            if (foundDevice != null) {
+                foundDevice.rssi = scanResult.rssi
+                foundDevice.updateBluetoothDevice(scanResult.device)
+            } else {
+                foundDevices[hash] = createdDevice
+                globalDevices[hash] = createdDevice
+            }
         }
     }
 }

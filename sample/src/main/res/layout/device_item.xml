@@ -47,6 +47,17 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_below="@+id/tx_mac"
+                android:id="@+id/tx_rssi"
+                android:paddingStart="20dp"
+                android:paddingEnd="20dp"
+                android:textColor="#fff"
+                android:paddingBottom="20dp"
+                android:textSize="12sp" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_below="@+id/tx_rssi"
                 android:textColor="#fff"
                 android:id="@+id/tx_type_of_device"
                 android:paddingStart="20dp"
