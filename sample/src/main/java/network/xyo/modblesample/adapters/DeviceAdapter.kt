@@ -25,6 +25,7 @@ class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerVie
         holder.properties.removeAllViews()
         holder.name.text = list[position].name ?: "Unknown"
         holder.mac.text = list[position].address
+        holder.rssi.text = list[position].rssi.toString()
         holder.typeOfDevice.text = list[position].javaClass.simpleName
 
         for (property in getProperties(list[position])) {
@@ -84,6 +85,7 @@ class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerVie
     class ViewHolder(itemView: View): RecyclerView.ViewHolder(itemView){
         val name : TextView = itemView.findViewById(R.id.tx_device_name)
         val mac : TextView = itemView.findViewById(R.id.tx_mac)
+        val rssi : TextView = itemView.findViewById(R.id.tx_rssi)
         val typeOfDevice : TextView = itemView.findViewById(R.id.tx_type_of_device)
         val properties : LinearLayout = itemView.findViewById(R.id.ll_properties)
         val card : CardView = itemView.findViewById(R.id.cv_device)

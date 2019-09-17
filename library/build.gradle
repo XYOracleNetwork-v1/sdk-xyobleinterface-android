@@ -65,7 +65,7 @@ dependencies {
 
     implementation 'network.xyo:sdk-core-kotlin:1.1.14'
     implementation 'network.xyo:sdk-base-android:2.0.91'
-    implementation 'network.xyo:sdk-ble-android:2.2.272'
+    implementation 'network.xyo:sdk-ble-android:2.2.282'
 
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
 

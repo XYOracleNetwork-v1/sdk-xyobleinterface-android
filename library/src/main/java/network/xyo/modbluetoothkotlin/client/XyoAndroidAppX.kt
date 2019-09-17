@@ -2,6 +2,7 @@ package network.xyo.modbluetoothkotlin.client
 
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.devices.XY4BluetoothDevice
 import network.xyo.ble.devices.XYBluetoothDevice
@@ -23,7 +24,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
-open class XyoAndroidAppX(context: Context, scanResult: XYScanResult, hash: Int) :
+open class XyoAndroidAppX(context: Context, scanResult: XYScanResult, hash: String) :
         XyoBluetoothClient(context, scanResult, hash) {
 
     companion object : XYCreator() {
@@ -43,10 +44,16 @@ open class XyoAndroidAppX(context: Context, scanResult: XYScanResult, hash: Int)
                 foundDevices: HashMap<String,
                         XYBluetoothDevice>
         ) {
-            val hash = scanResult.device?.address.hashCode()
+            val hash = hashFromScanResult(scanResult)
             val createdDevice = XyoAndroidAppX(context, scanResult, hash)
-            foundDevices[createdDevice.id] = createdDevice
-            globalDevices[createdDevice.id] = createdDevice
+            val foundDevice = foundDevices[hash]
+            if (foundDevice != null) {
+                foundDevice.rssi = scanResult.rssi
+                foundDevice.updateBluetoothDevice(scanResult.device)
+            } else {
+                foundDevices[hash] = createdDevice
+                globalDevices[hash] = createdDevice
+            }
         }
     }
 }

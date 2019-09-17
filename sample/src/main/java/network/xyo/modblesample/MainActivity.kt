@@ -36,7 +36,6 @@ import network.xyo.sdkcorekotlin.persist.repositories.XyoStorageOriginBlockRepos
 import network.xyo.sdkcorekotlin.persist.repositories.XyoStorageOriginStateRepository
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import java.nio.ByteBuffer
-import java.util.*
 import kotlin.collections.ArrayList
 
 
@@ -93,8 +92,8 @@ class MainActivity : FragmentActivity() {
 
     private fun createNewAdvertiser(): XyoBluetoothAdvertiser {
         return XyoBluetoothAdvertiser(
-                Random().nextInt(Short.MAX_VALUE + 1).toShort(),
-                Random().nextInt(Short.MAX_VALUE + 1).toShort(),
+                4, //Random().nextInt(Short.MAX_VALUE + 1).toShort(),
+                4, //Random().nextInt(Short.MAX_VALUE + 1).toShort(),
                 XYBluetoothAdvertiser(this))
     }
 
@@ -143,11 +142,11 @@ class MainActivity : FragmentActivity() {
 
     private fun initScanner() = GlobalScope.launch {
         XyoBluetoothClient.enable(true)
-        XYIBeaconBluetoothDevice.enable(true)
-        XyoSentinelX.enable(true)
-        XyoBridgeX.enable(true)
+        //XYIBeaconBluetoothDevice.enable(true)
+        //XyoSentinelX.enable(true)
+        //XyoBridgeX.enable(true)
         XyoAndroidAppX.enable(true)
-        XyoIosAppX.enable(true)
+        //XyoIosAppX.enable(true)
         scanner = createNewScanner()
         scanner.start().await()
         scanner.addListener(this.toString(), deviceButtonListener)
