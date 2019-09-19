@@ -1,6 +1,7 @@
 package network.xyo.modblesample
 
 
+import android.content.Context
 import android.os.Bundle
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
@@ -19,6 +20,7 @@ import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
 import network.xyo.modblesample.fragments.*
+import network.xyo.modbluetoothkotlin.XyoBleSdk
 import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
 import network.xyo.modbluetoothkotlin.client.*
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
@@ -49,8 +51,6 @@ import kotlin.collections.ArrayList
 class MainActivity : FragmentActivity() {
     private var shouldBridge = false
     private lateinit var scanner: XYSmartScanModern
-    private lateinit var server: XyoBluetoothServer
-    private lateinit var advertiser: XyoBluetoothAdvertiser
     private lateinit var node: XyoRelayNode
 
     private val serverCallback = object : XyoBluetoothServer.Listener {
@@ -58,13 +58,13 @@ class MainActivity : FragmentActivity() {
             GlobalScope.launch {
                 val handler = XyoNetworkHandler(pipe)
 
-                node.boundWitness(handler, boundWitnessCatalogue).await()
+                node.boundWitness(handler, boundWitnessCatalog).await()
                 return@launch
             }
         }
     }
 
-    private val boundWitnessCatalogue = object : XyoProcedureCatalog {
+    private val boundWitnessCatalog = object : XyoProcedureCatalog {
         override fun canDo(byteArray: ByteArray): Boolean {
             if (shouldBridge) {
                 return true
@@ -90,17 +90,6 @@ class MainActivity : FragmentActivity() {
         return XYSmartScanModern(this)
     }
 
-    private fun createNewAdvertiser(): XyoBluetoothAdvertiser {
-        return XyoBluetoothAdvertiser(
-                4, //Random().nextInt(Short.MAX_VALUE + 1).toShort(),
-                4, //Random().nextInt(Short.MAX_VALUE + 1).toShort(),
-                XYBluetoothAdvertiser(this))
-    }
-
-    private fun createNewServer(): XyoBluetoothServer {
-        return XyoBluetoothServer(XYBluetoothGattServer(this))
-    }
-
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
@@ -108,10 +97,10 @@ class MainActivity : FragmentActivity() {
         requestBluetooth(bluetoothPermissionHandler)
 
         val hasher = XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")
-        val sotrage = XyoInMemoryStorageProvider()
-        val blockRepo = XyoStorageOriginBlockRepository(sotrage, hasher)
-        val stateRepo = XyoStorageOriginStateRepository(sotrage)
-        val queueRepo = XyoStorageBridgeQueueRepository(sotrage)
+        val storage = XyoInMemoryStorageProvider()
+        val blockRepo = XyoStorageOriginBlockRepository(storage, hasher)
+        val stateRepo = XyoStorageOriginStateRepository(storage)
+        val queueRepo = XyoStorageBridgeQueueRepository(storage)
         node = XyoRelayNode(blockRepo, stateRepo, queueRepo, hasher)
 
         showDevicesFragment()
@@ -126,7 +115,7 @@ class MainActivity : FragmentActivity() {
     private val bluetoothPermissionHandler = object : PermissionHandler() {
         override fun onGranted() {
             initScanner()
-            initServer()
+            initServer(this@MainActivity)
             XyoBluetoothClient.enable(true)
             XyoSentinelX.enable(true)
             XyoBridgeX.enable(true)
@@ -142,11 +131,11 @@ class MainActivity : FragmentActivity() {
 
     private fun initScanner() = GlobalScope.launch {
         XyoBluetoothClient.enable(true)
-        //XYIBeaconBluetoothDevice.enable(true)
-        //XyoSentinelX.enable(true)
-        //XyoBridgeX.enable(true)
+        XYIBeaconBluetoothDevice.enable(true)
+        XyoSentinelX.enable(true)
+        XyoBridgeX.enable(true)
         XyoAndroidAppX.enable(true)
-        //XyoIosAppX.enable(true)
+        XyoIosAppX.enable(true)
         scanner = createNewScanner()
         scanner.start().await()
         scanner.addListener(this.toString(), deviceButtonListener)
@@ -237,13 +226,9 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun initServer() = GlobalScope.launch {
-        server = createNewServer()
-        server.initServer().await()
-        advertiser = createNewAdvertiser()
-        advertiser.configureAdvertiser()
-        advertiser.startAdvertiser().await()
-        server.listener = serverCallback
+    private fun initServer(context: Context) = GlobalScope.launch {
+        XyoBleSdk.advertiser(context).await().startAdvertiser().await()
+        XyoBleSdk.server(context).await().listener = serverCallback
     }
 
     private fun replaceFragment(fragment: Fragment) {
@@ -287,7 +272,7 @@ class MainActivity : FragmentActivity() {
             if (pipe != null) {
                 val handler = XyoNetworkHandler(pipe)
 
-                val bw = node.boundWitness(handler, boundWitnessCatalogue).await()
+                val bw = node.boundWitness(handler, boundWitnessCatalog).await()
                 return@connection XYBluetoothResult(bw)
             }
 

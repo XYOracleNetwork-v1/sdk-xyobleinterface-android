@@ -1,5 +1,6 @@
 package network.xyo.modbluetoothkotlin.advertiser
 
+import android.bluetooth.BluetoothAdapter
 import android.bluetooth.le.AdvertiseData
 import android.bluetooth.le.AdvertiseSettings
 import android.os.ParcelUuid
@@ -17,16 +18,20 @@ import java.nio.ByteBuffer
  * @property minor The device minor to advertise
  * @param advertiser The XY advertiser to advertise with.
  */
+@kotlin.ExperimentalUnsignedTypes
 class XyoBluetoothAdvertiser(
-        private val major: Short,
-        private val minor: Short,
+        private val major: UShort,
+        private val minor: UShort,
         private val advertiser: XYBluetoothAdvertiser
 ) {
+
+    private var includeName = false
 
     /**
      * Start a advertisement cycle
      */
     fun configureAdvertiser() {
+        includeName = BluetoothAdapter.getDefaultAdapter().setName("Xyo")
         if (advertiser.isMultiAdvertisementSupported) {
             configureAdverserMulti()
             return
@@ -43,8 +48,8 @@ class XyoBluetoothAdvertiser(
 //    }
 
     private fun configureAdverserMulti() {
-        val encodeMajor = ByteBuffer.allocate(2).putShort(major).array()
-        val encodedMinor = ByteBuffer.allocate(2).putShort(minor).array()
+        val encodeMajor = ByteBuffer.allocate(2).putShort(major.toShort()).array()
+        val encodedMinor = ByteBuffer.allocate(2).putShort(minor.toShort()).array()
         val advertiseData = XYIBeaconAdvertiseDataCreator.create(
                 encodeMajor,
                 encodedMinor,
@@ -54,7 +59,7 @@ class XyoBluetoothAdvertiser(
         ).build()
 
         val responseData = AdvertiseData.Builder()
-                .setIncludeDeviceName(true)
+                .setIncludeDeviceName(includeName)
                 .addServiceUuid(ParcelUuid(
                         XyoUuids.XYO_SERVICE
                 ))
@@ -70,7 +75,7 @@ class XyoBluetoothAdvertiser(
     private fun configureAdvertiserSingle() {
         val advertiseData = AdvertiseData.Builder()
                 .addServiceUuid(ParcelUuid(XyoUuids.XYO_SERVICE))
-                .setIncludeDeviceName(true)
+                .setIncludeDeviceName(includeName)
                 .build()
 
         advertiser.advertisingData = advertiseData
