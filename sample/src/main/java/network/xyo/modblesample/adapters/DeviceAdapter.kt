@@ -18,6 +18,7 @@ import network.xyo.modbluetoothkotlin.client.XyoSentinelX
  *
  * @param listener The listener for on bw click events.
  */
+@kotlin.ExperimentalUnsignedTypes
 class DeviceAdapter (var listener : XYServiceListAdapterListener?) : RecyclerView.Adapter<DeviceAdapter.ViewHolder>() {
     private var list: ArrayList<XYBluetoothDevice> = arrayListOf()
 

@@ -14,6 +14,7 @@ import network.xyo.ble.gatt.peripheral.XYBluetoothResult
 import network.xyo.modblesample.R
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 
+@kotlin.ExperimentalUnsignedTypes
 class XyoStandardDeviceFragment : Fragment() {
     lateinit var device : XYBluetoothDevice
     lateinit var listener : Listener

@@ -82,11 +82,11 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
 
 
     /**
-     * The class that complies to the XyoNetworkPipe interface. After a connection and catalogue negation has been
+     * The class that complies to the XyoNetworkPipe interface. After a connection and catalog negation has been
      * successfully executed this class is created and returned to the createPipe() function. This class includes
      * methods for sending data back and fourth between nodes that complies to the XYO Network BLE transfer protocol.
      *
-     * @property role The catalogue of the other party involved (the choice of the pipe).
+     * @property role The catalog of the other party involved (the choice of the pipe).
      * @property initiationData The data that the other party sent after connecting (if any).
      * @property rssi The RSSI of the connection. This is used for the RSSI heuristic (if any).
      */

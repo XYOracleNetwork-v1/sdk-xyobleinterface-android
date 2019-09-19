@@ -14,6 +14,7 @@ import network.xyo.modblesample.adapters.DeviceAdapter
 import network.xyo.modblesample.R
 
 
+@kotlin.ExperimentalUnsignedTypes
 class XyoDevicesFragment : Fragment() {
     interface XyoDevicesFragmentHandler {
         fun getDevices () : Array<XYBluetoothDevice>

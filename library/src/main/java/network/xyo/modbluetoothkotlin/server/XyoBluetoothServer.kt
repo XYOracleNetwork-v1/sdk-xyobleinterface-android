@@ -74,7 +74,7 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
      * @property bluetoothDevice The device that the server is connected to. This is used to filter request from
      * other devices.
      * @property writeCharacteristic The characteristic to write look for writes from the server.
-     * @property catalogue The catalogue that the client has sent to the server on connection.
+     * @property catalog The catalog that the client has sent to the server on connection.
      */
     inner class XyoBluetoothServerPipe(private val bluetoothDevice: BluetoothDevice,
                                        private val writeCharacteristic: XYBluetoothCharacteristic,

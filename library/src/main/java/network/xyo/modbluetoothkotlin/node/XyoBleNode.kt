@@ -16,7 +16,7 @@ import network.xyo.sdkcorekotlin.repositories.XyoBridgeQueueRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginBlockRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginChainStateRepository
 
-open class XyoBleNode(private val procedureCatalogue: XyoProcedureCatalog,
+open class XyoBleNode(private val procedureCatalog: XyoProcedureCatalog,
                       blockRepository: XyoOriginBlockRepository,
                       stateRepository: XyoOriginChainStateRepository,
                       bridgeQueueRepository: XyoBridgeQueueRepository,
@@ -44,7 +44,7 @@ open class XyoBleNode(private val procedureCatalogue: XyoProcedureCatalog,
                     canBoundWitness = false
                     val handler = XyoNetworkHandler(pipe)
 
-                    boundWitness(handler, procedureCatalogue).await()
+                    boundWitness(handler, procedureCatalog).await()
 
                     canBoundWitness = true
                     return@launch
@@ -65,7 +65,7 @@ open class XyoBleNode(private val procedureCatalogue: XyoProcedureCatalog,
                 if (pipe != null) {
                     val handler = XyoNetworkHandler(pipe)
 
-                    val bw = boundWitness(handler, procedureCatalogue).await()
+                    val bw = boundWitness(handler, procedureCatalog).await()
                     return@connection XYBluetoothResult(bw != null)
                 }
 
