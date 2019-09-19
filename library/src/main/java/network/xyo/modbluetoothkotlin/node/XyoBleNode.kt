@@ -16,6 +16,7 @@ import network.xyo.sdkcorekotlin.repositories.XyoBridgeQueueRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginBlockRepository
 import network.xyo.sdkcorekotlin.repositories.XyoOriginChainStateRepository
 
+@kotlin.ExperimentalUnsignedTypes
 open class XyoBleNode(private val procedureCatalog: XyoProcedureCatalog,
                       blockRepository: XyoOriginBlockRepository,
                       stateRepository: XyoOriginChainStateRepository,
