@@ -24,6 +24,7 @@ import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
+@kotlin.ExperimentalUnsignedTypes
 open class XyoAndroidAppX(context: Context, scanResult: XYScanResult, hash: String) :
         XyoBluetoothClient(context, scanResult, hash) {
 

@@ -32,14 +32,14 @@ def code = (versionProps['VERSION_CODE'] ?: "0").toInteger() + 1
 def verString = majorVersion + '.' + minorVersion + '.' + code
 
 android {
-    compileSdkVersion 28
+    compileSdkVersion 29
 
     versionProps['VERSION_CODE'] = code.toString()
     versionProps.store(versionPropsFile.newWriter(), null)
 
     defaultConfig {
         minSdkVersion 21
-        targetSdkVersion 28
+        targetSdkVersion 29
         defaultPublishConfig 'release'
         versionCode majorVersion * 100000000 + minorVersion * 1000000 + code
         versionName majorVersion + "." + minorVersion + "." + code

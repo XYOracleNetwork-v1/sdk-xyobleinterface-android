@@ -7,6 +7,7 @@ import network.xyo.ble.scanner.XYScanResult
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 
+@kotlin.ExperimentalUnsignedTypes
 open class XyoIosAppX(context: Context, scanResult: XYScanResult, hash: String) :
         XyoBluetoothClient(context, scanResult, hash) {
 
