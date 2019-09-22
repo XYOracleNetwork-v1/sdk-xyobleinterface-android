@@ -1,4 +1,4 @@
-package network.xyo.modblesample
+package network.xyo.sdk.ble.sample
 
 
 import android.content.Context
@@ -8,20 +8,15 @@ import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentTransaction
 import com.nabinbhandari.android.permissions.PermissionHandler
 import com.nabinbhandari.android.permissions.Permissions
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.*
 import network.xyo.ble.devices.XYBluetoothDevice
 import network.xyo.ble.devices.XYIBeaconBluetoothDevice
 import network.xyo.ble.gatt.peripheral.XYBluetoothError
 import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
-import network.xyo.ble.gatt.server.XYBluetoothGattServer
 import network.xyo.ble.scanner.XYSmartScan
 import network.xyo.ble.scanner.XYSmartScanModern
-import network.xyo.modblesample.fragments.*
+import network.xyo.sdk.ble.sample.fragments.*
 import network.xyo.modbluetoothkotlin.XyoBleSdk
-import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
 import network.xyo.modbluetoothkotlin.client.*
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
@@ -114,14 +109,16 @@ class MainActivity : FragmentActivity() {
 
     private val bluetoothPermissionHandler = object : PermissionHandler() {
         override fun onGranted() {
-            initScanner()
-            initServer(this@MainActivity)
-            XyoBluetoothClient.enable(true)
-            XyoSentinelX.enable(true)
-            XyoBridgeX.enable(true)
-            XyoAndroidAppX.enable(true)
-            XyoIosAppX.enable(true)
-            XyoSha256WithSecp256K.enable()
+            GlobalScope.launch {
+                initScanner()
+                initServer(this@MainActivity)
+                XyoBluetoothClient.enable(true)
+                XyoSentinelX.enable(true)
+                XyoBridgeX.enable(true)
+                XyoAndroidAppX.enable(true)
+                XyoIosAppX.enable(true)
+                XyoSha256WithSecp256K.enable()
+            }
         }
     }
 
@@ -226,10 +223,13 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private fun initServer(context: Context) = GlobalScope.launch {
-        XyoBleSdk.advertiser(context).await().startAdvertiser().await()
-        XyoBleSdk.server(context).await().listener = serverCallback
-    }
+    private suspend fun initServer(context: Context): Boolean = GlobalScope.async {
+        if (XyoBleSdk.advertiser(context).startAdvertiser().await()?.hasError() == false) {
+            return@async false
+        }
+        XyoBleSdk.server(context).listener = serverCallback
+        return@async true
+    }.await()
 
     private fun replaceFragment(fragment: Fragment) {
         ui {
@@ -267,7 +267,7 @@ class MainActivity : FragmentActivity() {
 
     private suspend fun tryBoundWitness(device: XyoBluetoothClient): XYBluetoothResult<XyoBoundWitness> {
         return device.connection {
-            val pipe = device.createPipe().await()
+            val pipe = device.createPipe()
 
             if (pipe != null) {
                 val handler = XyoNetworkHandler(pipe)

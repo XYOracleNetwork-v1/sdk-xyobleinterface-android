@@ -89,7 +89,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param newPassword The password to change on the remote device.
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    fun changePassword(password: ByteArray, newPassword: ByteArray): Deferred<XYBluetoothError?> {
+    suspend fun changePassword(password: ByteArray, newPassword: ByteArray): XYBluetoothError? {
         val encoded = ByteBuffer.allocate(2 + password.size + newPassword.size)
                 .put((password.size + 1).toByte())
                 .put(password)
@@ -97,7 +97,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                 .put(newPassword)
                 .array()
 
-        return chunkSend(encoded, XyoUuids.XYO_PASSWORD, XyoUuids.XYO_SERVICE, 1)
+        return chunkSend(encoded, XyoUuids.XYO_PASSWORD, XyoUuids.XYO_SERVICE, 1).await()
     }
 
     /**
@@ -106,7 +106,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param password The password of the device to so it can write the boundWitnessData
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    fun changeBoundWitnessData(password: ByteArray, boundWitnessData: ByteArray): Deferred<XYBluetoothError?> {
+    suspend fun changeBoundWitnessData(password: ByteArray, boundWitnessData: ByteArray): XYBluetoothError? {
         val encoded = ByteBuffer.allocate(3 + password.size + boundWitnessData.size)
                 .put((password.size + 1).toByte())
                 .put(password)
@@ -114,11 +114,11 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                 .put(boundWitnessData)
                 .array()
 
-        return chunkSend(encoded, XyoUuids.XYO_CHANGE_BW_DATA, XyoUuids.XYO_SERVICE, 4)
+        return chunkSend(encoded, XyoUuids.XYO_CHANGE_BW_DATA, XyoUuids.XYO_SERVICE, 4).await()
     }
 
-    fun getBoundWitnessData(): Deferred<XYBluetoothResult<ByteArray>> {
-        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_CHANGE_BW_DATA)
+    suspend fun getBoundWitnessData(): XYBluetoothResult<ByteArray> {
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_CHANGE_BW_DATA).await()
     }
 
     /**
@@ -126,7 +126,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param password The password of the device to so it can write the boundWitnessData
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    fun resetDevice(password: ByteArray): Deferred<XYBluetoothResult<ByteArray>> {
+    suspend fun resetDevice(password: ByteArray): XYBluetoothResult<ByteArray> {
         val msg = ByteBuffer.allocate(password.size + 2)
                 .put((password.size + 2).toByte())
                 .put((password.size + 1).toByte())
@@ -137,7 +137,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                 XyoUuids.XYO_SERVICE,
                 XyoUuids.XYO_RESET_DEVICE,
                 msg,
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT).await()
     }
 
     /**

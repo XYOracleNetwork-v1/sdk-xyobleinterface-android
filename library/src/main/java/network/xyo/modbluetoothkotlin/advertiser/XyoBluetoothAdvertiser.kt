@@ -91,9 +91,9 @@ class XyoBluetoothAdvertiser(
         advertiser.stopAdvertising()
     }
 
-    fun startAdvertiser() = GlobalScope.async {
+    suspend fun startAdvertiser() = GlobalScope.async {
         return@async advertiser.startAdvertising()
-    }
+    }.await()
 
     companion object {
         const val APPLE_MANUFACTURER_ID = 76

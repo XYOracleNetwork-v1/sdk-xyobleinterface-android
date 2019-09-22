@@ -1,11 +1,11 @@
-package network.xyo.modblesample.adapters
+package network.xyo.sdk.ble.sample.adapters
 
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
-import network.xyo.modblesample.R
+import network.xyo.sdk.ble.sample.R
 
 class BoundWitnessAdapter : RecyclerView.Adapter<BoundWitnessAdapter.ViewHolder>() {
     private var list: ArrayList<XyoBoundWitnessItem> = arrayListOf()

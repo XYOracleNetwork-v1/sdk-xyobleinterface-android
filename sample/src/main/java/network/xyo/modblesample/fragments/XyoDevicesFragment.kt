@@ -1,4 +1,4 @@
-package network.xyo.modblesample.fragments
+package network.xyo.sdk.ble.sample.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,8 +10,8 @@ import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.devices_fragment.*
 import kotlinx.android.synthetic.main.devices_fragment.view.*
 import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.modblesample.adapters.DeviceAdapter
-import network.xyo.modblesample.R
+import network.xyo.sdk.ble.sample.adapters.DeviceAdapter
+import network.xyo.sdk.ble.sample.R
 
 
 @kotlin.ExperimentalUnsignedTypes

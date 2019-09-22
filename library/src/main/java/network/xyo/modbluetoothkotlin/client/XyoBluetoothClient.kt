@@ -63,7 +63,7 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
      * creates a XyoNetworkPipe with THIS bluetooth device.
      * @return A Deferred XyoNetworkPipe if successful, null if not.
      */
-    fun createPipe(): Deferred<XyoNetworkPipe?> = GlobalScope.async {
+    suspend fun createPipe(): XyoNetworkPipe? = GlobalScope.async {
         findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PIPE, true).await()
 
         val requestMtu = requestMtu(MAX_MTU).await()
@@ -71,7 +71,7 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
         mtu = (requestMtu.value ?: mtu) - 3
 
         return@async XyoBluetoothClientPipe(rssi)
-    }
+    }.await()
 
     /**
      * Get the public Key

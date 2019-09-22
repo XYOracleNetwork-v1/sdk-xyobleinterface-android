@@ -1,4 +1,4 @@
-package network.xyo.modblesample.fragments
+package network.xyo.sdk.ble.sample.fragments
 
 import android.os.Handler
 import android.os.Looper

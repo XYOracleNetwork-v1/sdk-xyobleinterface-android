@@ -1,4 +1,4 @@
-package network.xyo.modblesample.adapters
+package network.xyo.sdk.ble.sample.adapters
 
 import android.graphics.Color
 import android.view.LayoutInflater
@@ -9,7 +9,7 @@ import android.widget.TextView
 import androidx.cardview.widget.CardView
 import androidx.recyclerview.widget.RecyclerView
 import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.modblesample.R
+import network.xyo.sdk.ble.sample.R
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 import network.xyo.modbluetoothkotlin.client.XyoSentinelX
 

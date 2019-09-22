@@ -1,4 +1,4 @@
-package network.xyo.modblesample.fragments
+package network.xyo.sdk.ble.sample.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -10,8 +10,7 @@ import kotlinx.android.synthetic.main.device_fragment.view.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
 import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.modblesample.R
+import network.xyo.sdk.ble.sample.R
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 
 @kotlin.ExperimentalUnsignedTypes

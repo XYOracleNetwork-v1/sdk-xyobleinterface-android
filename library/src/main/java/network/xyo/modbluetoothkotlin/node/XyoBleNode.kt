@@ -61,7 +61,7 @@ open class XyoBleNode(private val procedureCatalog: XyoProcedureCatalog,
             canBoundWitness = false
 
             device.connection {
-                val pipe = device.createPipe().await()
+                val pipe = device.createPipe()
 
                 if (pipe != null) {
                     val handler = XyoNetworkHandler(pipe)
