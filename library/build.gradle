@@ -63,9 +63,9 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    implementation 'network.xyo:sdk-core-kotlin:1.1.14'
-    implementation 'network.xyo:sdk-base-android:2.0.91'
-    implementation 'network.xyo:sdk-ble-android:3.0.1044'
+    api 'network.xyo:sdk-core-kotlin:1.1.14'
+    api 'network.xyo:sdk-base-android:2.0.91'
+    api 'network.xyo:sdk-ble-android:3.0.1044'
 
     api 'org.jetbrains.kotlinx:kotlinx-coroutines-core:1.2.1'
 
