@@ -4,8 +4,8 @@ import android.content.Context
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
-import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
-import network.xyo.ble.gatt.server.XYBluetoothGattServer
+import network.xyo.ble.generic.gatt.server.XYBluetoothAdvertiser
+import network.xyo.ble.generic.gatt.server.XYBluetoothGattServer
 import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import java.util.*

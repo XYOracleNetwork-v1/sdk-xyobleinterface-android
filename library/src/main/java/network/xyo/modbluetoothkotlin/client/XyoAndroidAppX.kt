@@ -1,9 +1,9 @@
 package network.xyo.modbluetoothkotlin.client
 
 import android.content.Context
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.devices.XYCreator
-import network.xyo.ble.scanner.XYScanResult
+import network.xyo.ble.generic.devices.XYBluetoothDevice
+import network.xyo.ble.generic.devices.XYCreator
+import network.xyo.ble.generic.scanner.XYScanResult
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
 

@@ -3,19 +3,19 @@ package network.xyo.modbluetoothkotlin.client
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import kotlinx.coroutines.*
-import network.xyo.ble.devices.XY4BluetoothDevice
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.devices.XYCreator
+import network.xyo.ble.devices.xy.XY4BluetoothDevice
+import network.xyo.ble.devices.xy.XYFinderBluetoothDevice
 import network.xyo.ble.firmware.XYBluetoothDeviceUpdate
 import network.xyo.ble.firmware.XYOtaFile
 import network.xyo.ble.firmware.XYOtaUpdate
-import network.xyo.ble.gatt.peripheral.XYBluetoothError
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.ble.scanner.XYScanResult
+import network.xyo.ble.generic.devices.XYBluetoothDevice
+import network.xyo.ble.generic.devices.XYCreator
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothResult
+import network.xyo.ble.generic.scanner.XYScanResult
+import network.xyo.ble.generic.services.standard.BatteryService
+import network.xyo.ble.generic.services.standard.DeviceInformationService
 import network.xyo.ble.services.dialog.SpotaService
-import network.xyo.ble.services.standard.BatteryService
-import network.xyo.ble.services.standard.DeviceInformationService
-import network.xyo.ble.services.xy4.PrimaryService
+import network.xyo.ble.services.xy.PrimaryService
 import network.xyo.modbluetoothkotlin.XyoUuids
 import java.io.ByteArrayInputStream
 import java.nio.ByteBuffer
@@ -89,7 +89,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param newPassword The password to change on the remote device.
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    suspend fun changePassword(password: ByteArray, newPassword: ByteArray): XYBluetoothError? {
+    suspend fun changePassword(password: ByteArray, newPassword: ByteArray): XYBluetoothResult<ByteArray>? {
         val encoded = ByteBuffer.allocate(2 + password.size + newPassword.size)
                 .put((password.size + 1).toByte())
                 .put(password)
@@ -97,7 +97,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                 .put(newPassword)
                 .array()
 
-        return chunkSend(encoded, XyoUuids.XYO_PASSWORD, XyoUuids.XYO_SERVICE, 1).await()
+        return chunkSend(encoded, XyoUuids.XYO_PASSWORD, XyoUuids.XYO_SERVICE, 1)
     }
 
     /**
@@ -106,7 +106,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param password The password of the device to so it can write the boundWitnessData
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    suspend fun changeBoundWitnessData(password: ByteArray, boundWitnessData: ByteArray): XYBluetoothError? {
+    suspend fun changeBoundWitnessData(password: ByteArray, boundWitnessData: ByteArray): XYBluetoothResult<ByteArray>? {
         val encoded = ByteBuffer.allocate(3 + password.size + boundWitnessData.size)
                 .put((password.size + 1).toByte())
                 .put(password)
@@ -114,11 +114,11 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                 .put(boundWitnessData)
                 .array()
 
-        return chunkSend(encoded, XyoUuids.XYO_CHANGE_BW_DATA, XyoUuids.XYO_SERVICE, 4).await()
+        return chunkSend(encoded, XyoUuids.XYO_CHANGE_BW_DATA, XyoUuids.XYO_SERVICE, 4)
     }
 
     suspend fun getBoundWitnessData(): XYBluetoothResult<ByteArray> {
-        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_CHANGE_BW_DATA).await()
+        return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_CHANGE_BW_DATA)
     }
 
     /**
@@ -137,33 +137,33 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                 XyoUuids.XYO_SERVICE,
                 XyoUuids.XYO_RESET_DEVICE,
                 msg,
-                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT).await()
+                BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT)
     }
 
     /**
      * Lock the device.
      */
-    fun lock() = connection {
-        return@connection primary.lock.set(XY4BluetoothDevice.DefaultLockCode).await()
+    suspend fun lock() = connection {
+        return@connection primary.lock.set(XY4BluetoothDevice.DefaultLockCode)
     }
 
     /**
      * Unlock the device
      */
-    fun unlock() = connection {
-        return@connection primary.unlock.set(XY4BluetoothDevice.DefaultLockCode).await()
+    suspend fun unlock() = connection {
+        return@connection primary.unlock.set(XY4BluetoothDevice.DefaultLockCode)
     }
 
-    fun stayAwake() = connection {
-        return@connection primary.stayAwake.set(1).await()
+    suspend fun stayAwake() = connection {
+        return@connection primary.stayAwake.set(XYFinderBluetoothDevice.StayAwake.On.state)
     }
 
-    fun fallAsleep() = connection {
-        return@connection primary.stayAwake.set(0).await()
+    suspend fun fallAsleep() = connection {
+        return@connection primary.stayAwake.set(XYFinderBluetoothDevice.StayAwake.Off.state)
     }
 
-    fun batteryLevel() = connection {
-        return@connection batteryService.level.get().await()
+    suspend fun batteryLevel() = connection {
+        return@connection batteryService.level.get()
     }
 
     /**

@@ -3,18 +3,16 @@ package network.xyo.sdk.ble.sample
 
 import android.content.Context
 import android.os.Bundle
+import android.util.Log
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.FragmentActivity
 import androidx.fragment.app.FragmentTransaction
-import com.nabinbhandari.android.permissions.PermissionHandler
-import com.nabinbhandari.android.permissions.Permissions
 import kotlinx.coroutines.*
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.devices.XYIBeaconBluetoothDevice
-import network.xyo.ble.gatt.peripheral.XYBluetoothError
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.ble.scanner.XYSmartScan
-import network.xyo.ble.scanner.XYSmartScanModern
+import network.xyo.ble.devices.apple.XYIBeaconBluetoothDevice
+import network.xyo.ble.generic.devices.XYBluetoothDevice
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothResult
+import network.xyo.ble.generic.scanner.XYSmartScan
+import network.xyo.ble.generic.scanner.XYSmartScanModern
 import network.xyo.sdk.ble.sample.fragments.*
 import network.xyo.modbluetoothkotlin.XyoBleSdk
 import network.xyo.modbluetoothkotlin.client.*
@@ -89,7 +87,16 @@ class MainActivity : FragmentActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        requestBluetooth(bluetoothPermissionHandler)
+        GlobalScope.launch {
+            initScanner()
+            initServer(this@MainActivity)
+            XyoBluetoothClient.enable(true)
+            XyoSentinelX.enable(true)
+            XyoBridgeX.enable(true)
+            XyoAndroidAppX.enable(true)
+            XyoIosAppX.enable(true)
+            XyoSha256WithSecp256K.enable()
+        }
 
         val hasher = XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")
         val storage = XyoInMemoryStorageProvider()
@@ -106,27 +113,7 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-
-    private val bluetoothPermissionHandler = object : PermissionHandler() {
-        override fun onGranted() {
-            GlobalScope.launch {
-                initScanner()
-                initServer(this@MainActivity)
-                XyoBluetoothClient.enable(true)
-                XyoSentinelX.enable(true)
-                XyoBridgeX.enable(true)
-                XyoAndroidAppX.enable(true)
-                XyoIosAppX.enable(true)
-                XyoSha256WithSecp256K.enable()
-            }
-        }
-    }
-
-    private fun requestBluetooth(handler: PermissionHandler) {
-        Permissions.check(this, android.Manifest.permission.ACCESS_COARSE_LOCATION, "Need it.", handler)
-    }
-
-    private fun initScanner() = GlobalScope.launch {
+    private suspend fun initScanner() {
         XyoBluetoothClient.enable(true)
         XYIBeaconBluetoothDevice.enable(true)
         XyoSentinelX.enable(true)
@@ -134,7 +121,11 @@ class MainActivity : FragmentActivity() {
         XyoAndroidAppX.enable(true)
         XyoIosAppX.enable(true)
         scanner = createNewScanner()
-        scanner.start().await()
+        try {
+            scanner.start()
+        } catch(ex: Exception) {
+            Log.e("", ex.stackTrace.toString())
+        }
         scanner.addListener(this.toString(), deviceButtonListener)
     }
 
@@ -224,7 +215,7 @@ class MainActivity : FragmentActivity() {
     }
 
     private suspend fun initServer(context: Context): Boolean = GlobalScope.async {
-        if (XyoBleSdk.advertiser(context).startAdvertiser().await()?.hasError() == false) {
+        if (XyoBleSdk.advertiser(context).startAdvertiser()?.hasError() == false) {
             return@async false
         }
         XyoBleSdk.server(context).listener = serverCallback
@@ -276,7 +267,7 @@ class MainActivity : FragmentActivity() {
                 return@connection XYBluetoothResult(bw)
             }
 
-            return@connection XYBluetoothResult<XyoBoundWitness>(null, XYBluetoothError("pipe is null"))
-        }.await()
+            return@connection XYBluetoothResult<XyoBoundWitness>(null, XYBluetoothResult.ErrorCode.Unknown)
+        }
     }
 }

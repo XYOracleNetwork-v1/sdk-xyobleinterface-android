@@ -7,14 +7,13 @@ import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
 import kotlinx.coroutines.*
-import network.xyo.ble.devices.XYAppleBluetoothDevice
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.devices.XYCreator
-import network.xyo.ble.devices.XYIBeaconBluetoothDevice
-import network.xyo.ble.gatt.peripheral.XYBluetoothError
-import network.xyo.ble.gatt.peripheral.XYBluetoothGattCallback
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.ble.scanner.XYScanResult
+import network.xyo.ble.devices.apple.XYAppleBluetoothDevice
+import network.xyo.ble.devices.apple.XYIBeaconBluetoothDevice
+import network.xyo.ble.generic.devices.XYBluetoothDevice
+import network.xyo.ble.generic.devices.XYCreator
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothGattCallback
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothResult
+import network.xyo.ble.generic.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
@@ -64,9 +63,9 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
      * @return A Deferred XyoNetworkPipe if successful, null if not.
      */
     suspend fun createPipe(): XyoNetworkPipe? = GlobalScope.async {
-        findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PIPE, true).await()
+        findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PIPE, true)
 
-        val requestMtu = requestMtu(MAX_MTU).await()
+        val requestMtu = requestMtu(MAX_MTU)
 
         mtu = (requestMtu.value ?: mtu) - 3
 
@@ -76,7 +75,7 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
     /**
      * Get the public Key
      */
-    fun getPublicKey(): Deferred<XYBluetoothResult<ByteArray>> {
+    suspend fun getPublicKey(): XYBluetoothResult<ByteArray> {
         return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
     }
 
@@ -127,14 +126,14 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
          * null.
          * @return A differed ByteArray of the response of the server. If waitForResponse is null, will return null.
          */
-        override fun send(data: ByteArray, waitForResponse: Boolean): Deferred<ByteArray?> = GlobalScope.async {
+        override fun send(data: ByteArray, waitForResponse: Boolean) = GlobalScope.async {
             return@async suspendCoroutine<ByteArray?> { cont ->
                 val disconnectKey = this.toString() + Math.random().toString()
 
                 val sendAndReceive = GlobalScope.async {
 
                     val readJob = readIncoming()
-                    val packetError = chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4).await()
+                    val packetError = chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4)
 
                     log.info("Sent entire packet to the server.")
                     if (packetError == null) {
@@ -193,21 +192,21 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
      * @param sizeOfSize size of the packet header size to send
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    protected fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): Deferred<XYBluetoothError?> = GlobalScope.async {
-        return@async suspendCoroutine<XYBluetoothError?> { cont ->
+    protected suspend fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): XYBluetoothResult<ByteArray>? {
+        return suspendCoroutine { cont ->
             GlobalScope.launch {
                 val chunkedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
 
                 while (chunkedOutgoingPacket.canSendNext) {
-                    val error = findAndWriteCharacteristic(
+                    val result = findAndWriteCharacteristic(
                             service,
                             characteristic,
                             chunkedOutgoingPacket.getNext(),
                             BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                    ).await().error
+                    )
                     delay(500)
-                    if (error != null) {
-                        cont.resume(error)
+                    if (result.error != XYBluetoothResult.ErrorCode.None) {
+                        cont.resume(result)
                         return@launch
                     }
                 }

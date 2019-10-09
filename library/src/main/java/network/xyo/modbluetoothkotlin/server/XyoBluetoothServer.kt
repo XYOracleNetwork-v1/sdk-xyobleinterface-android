@@ -3,13 +3,12 @@ package network.xyo.modbluetoothkotlin.server
 import android.bluetooth.*
 import android.util.SparseIntArray
 import kotlinx.coroutines.*
-import network.xyo.ble.gatt.peripheral.XYBluetoothError
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.ble.gatt.server.XYBluetoothCharacteristic
-import network.xyo.ble.gatt.server.XYBluetoothDescriptor
-import network.xyo.ble.gatt.server.XYBluetoothGattServer
-import network.xyo.ble.gatt.server.XYBluetoothService
-import network.xyo.ble.gatt.server.responders.XYBluetoothWriteResponder
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothResult
+import network.xyo.ble.generic.gatt.server.XYBluetoothCharacteristic
+import network.xyo.ble.generic.gatt.server.XYBluetoothDescriptor
+import network.xyo.ble.generic.gatt.server.XYBluetoothGattServer
+import network.xyo.ble.generic.gatt.server.XYBluetoothService
+import network.xyo.ble.generic.gatt.server.responders.XYBluetoothWriteResponder
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.XyoUuids.NOTIFY_DESCRIPTOR
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
@@ -186,7 +185,7 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
      * @param characteristic The characteristic to notify that has changed.
      * @param bluetoothDevice The bluetooth device to send the data to.
      */
-    private suspend fun sendPacket(outgoingPacket: ByteArray, characteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<XYBluetoothError?> { cont ->
+    private suspend fun sendPacket(outgoingPacket: ByteArray, characteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice) = suspendCancellableCoroutine<XYBluetoothResult<ByteArray>?> { cont ->
         val key = "sendPacket $this ${Math.random()}"
         characteristic.value = outgoingPacket
 
@@ -209,7 +208,7 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                 characteristic.value = next
                 delay(ADVERTISEMENT_DELTA_TIMEOUT.toLong())
 
-                if (bluetoothServer.sendNotification(bluetoothWriteCharacteristic, true, bluetoothDevice).await()?.value != 0) {
+                if (bluetoothServer.sendNotification(bluetoothWriteCharacteristic, true, bluetoothDevice)?.value != 0) {
                     timeoutResume.cancel()
                     val idempotent = cont.tryResume(null)
                     idempotent?.let {
@@ -304,7 +303,7 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
         bluetoothService.addCharacteristic(bluetoothWriteCharacteristic)
         bluetoothServer.startServer()
 
-        return@async bluetoothServer.addService(bluetoothService).await()
+        return@async bluetoothServer.addService(bluetoothService)
     }.await()
 
     /**
