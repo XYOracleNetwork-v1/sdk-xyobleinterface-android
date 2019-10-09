@@ -6,8 +6,8 @@ import android.bluetooth.le.AdvertiseSettings
 import android.os.ParcelUuid
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
-import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
-import network.xyo.ble.gatt.server.XYIBeaconAdvertiseDataCreator
+import network.xyo.ble.generic.gatt.server.XYBluetoothAdvertiser
+import network.xyo.ble.generic.gatt.server.XYIBeaconAdvertiseDataCreator
 import network.xyo.modbluetoothkotlin.XyoUuids
 import java.nio.ByteBuffer
 
@@ -91,9 +91,9 @@ class XyoBluetoothAdvertiser(
         advertiser.stopAdvertising()
     }
 
-    fun startAdvertiser() = GlobalScope.async {
+    suspend fun startAdvertiser() = GlobalScope.async {
         return@async advertiser.startAdvertising()
-    }
+    }.await()
 
     companion object {
         const val APPLE_MANUFACTURER_ID = 76

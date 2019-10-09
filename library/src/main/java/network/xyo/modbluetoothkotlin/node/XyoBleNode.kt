@@ -2,9 +2,9 @@ package network.xyo.modbluetoothkotlin.node
 
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.ble.scanner.XYSmartScan
+import network.xyo.ble.generic.devices.XYBluetoothDevice
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothResult
+import network.xyo.ble.generic.scanner.XYSmartScan
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import network.xyo.sdkcorekotlin.hashing.XyoHash
@@ -61,7 +61,7 @@ open class XyoBleNode(private val procedureCatalog: XyoProcedureCatalog,
             canBoundWitness = false
 
             device.connection {
-                val pipe = device.createPipe().await()
+                val pipe = device.createPipe()
 
                 if (pipe != null) {
                     val handler = XyoNetworkHandler(pipe)
@@ -71,7 +71,7 @@ open class XyoBleNode(private val procedureCatalog: XyoProcedureCatalog,
                 }
 
                 return@connection XYBluetoothResult(false)
-            }.await()
+            }
 
 
             canBoundWitness = true

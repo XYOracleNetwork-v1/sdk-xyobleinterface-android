@@ -1,4 +1,4 @@
-package network.xyo.modblesample.fragments
+package network.xyo.sdk.ble.sample.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -9,9 +9,9 @@ import kotlinx.android.synthetic.main.device_fragment.*
 import kotlinx.android.synthetic.main.device_fragment.view.*
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.launch
-import network.xyo.ble.devices.XYBluetoothDevice
-import network.xyo.ble.gatt.peripheral.XYBluetoothResult
-import network.xyo.modblesample.R
+import network.xyo.ble.generic.devices.XYBluetoothDevice
+import network.xyo.ble.generic.gatt.peripheral.XYBluetoothResult
+import network.xyo.sdk.ble.sample.R
 import network.xyo.modbluetoothkotlin.client.XyoBluetoothClient
 
 @kotlin.ExperimentalUnsignedTypes
@@ -52,10 +52,9 @@ class XyoStandardDeviceFragment : Fragment() {
                     }
                     val xyoDevice = device as XyoBluetoothClient
                     val result = device.connection {
-                        return@connection xyoDevice.getPublicKey().await()
+                        return@connection xyoDevice.getPublicKey()
                     }
-                    val outerResult = result.await()
-                    val newValue = outerResult.error?.message ?: outerResult.value?.joinToString() ?: "??"
+                    val newValue = if (result.error != XYBluetoothResult.ErrorCode.None) result.value.toString() else result.error.toString()
                     ui {
                         view.tx_device_publickey.text = newValue
                     }

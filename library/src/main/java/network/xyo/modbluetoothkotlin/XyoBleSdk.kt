@@ -1,18 +1,17 @@
 package network.xyo.modbluetoothkotlin
 
 import android.content.Context
-import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.GlobalScope
 import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
-import network.xyo.ble.gatt.server.XYBluetoothAdvertiser
-import network.xyo.ble.gatt.server.XYBluetoothGattServer
+import network.xyo.ble.generic.gatt.server.XYBluetoothAdvertiser
+import network.xyo.ble.generic.gatt.server.XYBluetoothGattServer
 import network.xyo.modbluetoothkotlin.advertiser.XyoBluetoothAdvertiser
 import network.xyo.modbluetoothkotlin.server.XyoBluetoothServer
 import java.util.*
 
 @kotlin.ExperimentalUnsignedTypes
-class XyoBleSdk() {
+class XyoBleSdk {
     companion object {
         private var server: XyoBluetoothServer? = null
         private var advertiser: XyoBluetoothAdvertiser? = null
@@ -29,25 +28,25 @@ class XyoBleSdk() {
             return newAdvertiser
         }
 
-        private fun initServer(context: Context): Deferred<XyoBluetoothServer> = GlobalScope.async {
+        private suspend fun initServer(context: Context): XyoBluetoothServer = GlobalScope.async {
             val newServer =  XyoBluetoothServer(XYBluetoothGattServer(context))
-            newServer.initServer().await()
+            newServer.initServer()
             server = newServer
             return@async newServer
-        }
+        }.await()
 
-        fun server(context: Context): Deferred<XyoBluetoothServer> = GlobalScope.async {
+        suspend fun server(context: Context): XyoBluetoothServer = GlobalScope.async {
             initServerMutex.lock(this)
-            val result = server ?: initServer(context).await()
+            val result = server ?: initServer(context)
             initServerMutex.unlock(this)
             return@async result
-        }
+        }.await()
 
-        fun advertiser(context: Context, major: UShort? = null, minor: UShort? = null): Deferred<XyoBluetoothAdvertiser> = GlobalScope.async {
+        suspend fun advertiser(context: Context, major: UShort? = null, minor: UShort? = null): XyoBluetoothAdvertiser = GlobalScope.async {
             initAdvertiserMutex.lock(this)
             val result = advertiser ?: createNewAdvertiser(context, major, minor)
             initAdvertiserMutex.unlock(this)
             return@async result
-        }
+        }.await()
     }
 }

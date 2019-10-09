@@ -1,4 +1,4 @@
-package network.xyo.modblesample.fragments
+package network.xyo.sdk.ble.sample.fragments
 
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,8 +8,8 @@ import androidx.fragment.app.Fragment
 import androidx.recyclerview.widget.LinearLayoutManager
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.android.synthetic.main.hashes_fragment.*
-import network.xyo.modblesample.R
-import network.xyo.modblesample.adapters.HashAdapter
+import network.xyo.sdk.ble.sample.R
+import network.xyo.sdk.ble.sample.adapters.HashAdapter
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 
 class XyoHashesFragment : Fragment() {
@@ -44,7 +44,7 @@ class XyoHashesFragment : Fragment() {
     }
 
     companion object {
-        fun newInstance (boundWitnesses : Array<XyoBoundWitness>, listener: XyoHashesFragment.XyoHashesFragmentListener) : XyoHashesFragment {
+        fun newInstance (boundWitnesses : Array<XyoBoundWitness>, listener: XyoHashesFragmentListener) : XyoHashesFragment {
             val frag = XyoHashesFragment()
             frag.boundWitnesses = boundWitnesses
             frag.hashHandler = listener

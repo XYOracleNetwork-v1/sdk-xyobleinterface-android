@@ -47,7 +47,7 @@ class XyoBluetoothOutgoingPacket(private val chunkSize: Int, bytes: ByteArray, p
 
         val packet = ByteArray(size)
 
-        for (i in 0 until packet.size) {
+        for (i in packet.indices) {
             packet[i] = sizeWithBytes[currentIndex]
             currentIndex++
         }

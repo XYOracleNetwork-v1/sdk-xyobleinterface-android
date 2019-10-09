@@ -1,4 +1,4 @@
-package network.xyo.modblesample.adapters
+package network.xyo.sdk.ble.sample.adapters
 
 import android.view.LayoutInflater
 import android.view.View
@@ -6,13 +6,13 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.recyclerview.widget.RecyclerView
 import kotlinx.coroutines.runBlocking
-import network.xyo.modblesample.R
+import network.xyo.sdk.ble.sample.R
 import network.xyo.sdkcorekotlin.boundWitness.XyoBoundWitness
 import network.xyo.sdkcorekotlin.hashing.XyoBasicHashBase
 import network.xyo.sdkcorekotlin.schemas.XyoSchemas
 import network.xyo.sdkobjectmodelkotlin.toHexString
 
-class HashAdapter (var listener : HashAdapter.Listener?) : RecyclerView.Adapter<HashAdapter.ViewHolder>() {
+class HashAdapter (var listener : Listener?) : RecyclerView.Adapter<HashAdapter.ViewHolder>() {
     private val hasher = XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")
     private var list: ArrayList<XyoBoundWitness> = arrayListOf()
 
