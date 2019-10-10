@@ -45,6 +45,10 @@ class XyoBluetoothClientPipe(val client: XyoBluetoothClient) : XyoNetworkPipe {
         return toReturn.toTypedArray()
     }
 
+    fun wrapAsync() = GlobalScope.async {
+        return@async client.readIncoming()
+    }
+
     /**
      * Sends data to the other end of the pipe and waits for a response if the waitForResponse flag is set to
      * true. NOTE: The send and recive are abstracted away from the caller, this means that this may not be the
@@ -62,6 +66,7 @@ class XyoBluetoothClientPipe(val client: XyoBluetoothClient) : XyoNetworkPipe {
 
             val sendAndReceive = GlobalScope.async {
                 Log.i(TAG, "send: sendAndReceive: started")
+                val job = wrapAsync()
                 val packetError = client.chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4)
 
                 Log.i(TAG, "Sent entire packet to the server.")
@@ -70,7 +75,7 @@ class XyoBluetoothClientPipe(val client: XyoBluetoothClient) : XyoNetworkPipe {
                     var valueIn: ByteArray? = null
 
                     if (waitForResponse) {
-                        valueIn = client.readIncoming()
+                        valueIn = job.await()
                     }
 
                     Log.i(TAG, "Have read entire server response packet. ${valueIn?.toHexString()}")

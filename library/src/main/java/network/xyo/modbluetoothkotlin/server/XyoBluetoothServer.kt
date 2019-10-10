@@ -49,18 +49,20 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
     private val serverPrimaryEndpoint = object : BluetoothGattServerCallback() {
         override fun onConnectionStateChange(device: BluetoothDevice?, status: Int, newState: Int) {
             super.onConnectionStateChange(device, status, newState)
-
-
             when (newState) {
                 BluetoothGatt.STATE_CONNECTED -> {
-                    /*GlobalScope.launch {
-                        val incoming = readPacket(bluetoothWriteCharacteristic, device)
+                    //check to make sure we are being connected to.  A central should not have types
+                    if (device?.bluetoothClass?.majorDeviceClass == 0 && device.bluetoothClass.deviceClass == 0) {
+                        Log.i(TAG, "onConnectionStateChange: ${device.bluetoothClass?.majorDeviceClass}:${device.bluetoothClass?.deviceClass} ")
+                        GlobalScope.launch {
+                            val incoming = readPacket(bluetoothWriteCharacteristic, device)
 
-                        if (incoming != null && device != null) {
-                            val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, incoming)
-                            listener?.onPipe(pipe)
+                            if (incoming != null) {
+                                val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, incoming)
+                                listener?.onPipe(pipe)
+                            }
                         }
-                    }*/
+                    }
                 }
             }
         }
