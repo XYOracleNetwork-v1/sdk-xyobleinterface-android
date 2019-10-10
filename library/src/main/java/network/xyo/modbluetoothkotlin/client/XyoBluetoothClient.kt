@@ -6,6 +6,7 @@ import android.bluetooth.BluetoothGatt
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
 import android.os.Build
+import android.util.Log
 import kotlinx.coroutines.*
 import network.xyo.ble.devices.apple.XYAppleBluetoothDevice
 import network.xyo.ble.devices.apple.XYIBeaconBluetoothDevice
@@ -17,15 +18,10 @@ import network.xyo.ble.generic.scanner.XYScanResult
 import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
-import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
-import network.xyo.sdkcorekotlin.schemas.XyoSchemas
-import network.xyo.sdkobjectmodelkotlin.structure.XyoObjectStructure
-import network.xyo.sdkobjectmodelkotlin.toHexString
 import java.nio.ByteBuffer
 import java.util.*
 import java.util.concurrent.ConcurrentHashMap
-import kotlin.collections.ArrayList
 import kotlin.collections.HashMap
 import kotlin.coroutines.resume
 import kotlin.coroutines.suspendCoroutine
@@ -62,124 +58,21 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
      * creates a XyoNetworkPipe with THIS bluetooth device.
      * @return A Deferred XyoNetworkPipe if successful, null if not.
      */
-    suspend fun createPipe(): XyoNetworkPipe? = GlobalScope.async {
+    suspend fun createPipe(): XyoNetworkPipe? {
         findAndWriteCharacteristicNotify(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PIPE, true)
 
         val requestMtu = requestMtu(MAX_MTU)
 
         mtu = (requestMtu.value ?: mtu) - 3
 
-        return@async XyoBluetoothClientPipe(rssi)
-    }.await()
+        return XyoBluetoothClientPipe(this)
+    }
 
     /**
      * Get the public Key
      */
     suspend fun getPublicKey(): XYBluetoothResult<ByteArray> {
         return findAndReadCharacteristicBytes(XyoUuids.XYO_SERVICE, XyoUuids.XYO_PUBLIC_KEY)
-    }
-
-
-    /**
-     * The class that complies to the XyoNetworkPipe interface. After a connection and catalog negation has been
-     * successfully executed this class is created and returned to the createPipe() function. This class includes
-     * methods for sending data back and fourth between nodes that complies to the XYO Network BLE transfer protocol.
-     *
-     * @property role The catalog of the other party involved (the choice of the pipe).
-     * @property initiationData The data that the other party sent after connecting (if any).
-     * @property rssi The RSSI of the connection. This is used for the RSSI heuristic (if any).
-     */
-    inner class XyoBluetoothClientPipe(val rssi: Int?) : XyoNetworkPipe {
-
-        override val initiationData: XyoAdvertisePacket? = null
-
-        /**
-         * Closes the pipe between parties. In this case, disconnects from the device and closes the GATT. This should
-         * be called after the pipe is finished being used.
-         */
-        override fun close(): Deferred<Any?> = GlobalScope.async {
-            disconnect()
-            this@XyoBluetoothClient.close()
-        }
-
-        override fun getNetworkHeretics(): Array<XyoObjectStructure> {
-            val toReturn = ArrayList<XyoObjectStructure>()
-
-            if (rssi != null) {
-                val encodedRssi = XyoObjectStructure.newInstance(XyoSchemas.RSSI, byteArrayOf(rssi.toByte()))
-                toReturn.add(encodedRssi)
-            }
-
-            val pwr = XyoObjectStructure.newInstance(XyoSchemas.BLE_POWER_LVL, byteArrayOf(power))
-            toReturn.add(pwr)
-
-            return toReturn.toTypedArray()
-        }
-
-        /**
-         * Sends data to the other end of the pipe and waits for a response if the waitForResponse flag is set to
-         * true. NOTE: The send and recive are abstracted away from the caller, this means that this may not be the
-         * exact bytes going over the wire.
-         *
-         * @param data The data to send to the other end of the pipe.
-         * @param waitForResponse If this flag is set, this function will wait for a response. If not, will return
-         * null.
-         * @return A differed ByteArray of the response of the server. If waitForResponse is null, will return null.
-         */
-        override fun send(data: ByteArray, waitForResponse: Boolean) = GlobalScope.async {
-            return@async suspendCoroutine<ByteArray?> { cont ->
-                val disconnectKey = this.toString() + Math.random().toString()
-
-                val sendAndReceive = GlobalScope.async {
-
-                    val readJob = readIncoming()
-                    val packetError = chunkSend(data, XyoUuids.XYO_PIPE, XyoUuids.XYO_SERVICE, 4)
-
-                    log.info("Sent entire packet to the server.")
-                    if (packetError == null) {
-                        log.info("Sent entire packet to the server (good).")
-                        var valueIn: ByteArray? = null
-
-
-                        if (waitForResponse) {
-                            valueIn = readJob.await()
-                        }
-
-                        log.info("Have read entire server response packet. ${valueIn?.toHexString()}")
-                        removeListener(disconnectKey)
-                        cont.resume(valueIn)
-                    } else {
-                        log.info("Error sending entire packet to the server. $packetError")
-                        removeListener(disconnectKey)
-                        cont.resume(null)
-                    }
-                }
-
-                // add the disconnect listener
-                log.info("Adding disconnect listener.")
-                addListener(disconnectKey, object : XYBluetoothDevice.Listener() {
-                    override fun connectionStateChanged(device: XYBluetoothDevice, newState: Int) {
-                        when (newState) {
-
-                            BluetoothGatt.STATE_DISCONNECTED -> {
-                                log.info("Someone disconnected.")
-
-                                if (cont.context.isActive) {
-                                    log.info("Context is still active.")
-                                    removeListener(disconnectKey)
-
-                                    log.info("Canceling send and receive.")
-
-                                    cont.resume(null)
-                                    coroutineContext.cancel()
-                                    sendAndReceive.cancel()
-                                }
-                            }
-                        }
-                    }
-                })
-            }
-        }
     }
 
     /**
@@ -192,28 +85,28 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
      * @param sizeOfSize size of the packet header size to send
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    protected suspend fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): XYBluetoothResult<ByteArray>? {
-        return suspendCoroutine { cont ->
-            GlobalScope.launch {
-                val chunkedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
+    suspend fun chunkSend(outgoingPacket: ByteArray, characteristic: UUID, service: UUID, sizeOfSize: Int): XYBluetoothResult.ErrorCode {
+        Log.i(TAG, "chunkSend: started")
+        val chunkedOutgoingPacket = XyoBluetoothOutgoingPacket(mtu, outgoingPacket, sizeOfSize)
 
-                while (chunkedOutgoingPacket.canSendNext) {
-                    val result = findAndWriteCharacteristic(
-                            service,
-                            characteristic,
-                            chunkedOutgoingPacket.getNext(),
-                            BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
-                    )
-                    delay(500)
-                    if (result.error != XYBluetoothResult.ErrorCode.None) {
-                        cont.resume(result)
-                        return@launch
-                    }
+        var errorCode = XYBluetoothResult.ErrorCode.None
+
+        connection {
+            while (chunkedOutgoingPacket.canSendNext && errorCode == XYBluetoothResult.ErrorCode.None) {
+                val result = findAndWriteCharacteristic(
+                        service,
+                        characteristic,
+                        chunkedOutgoingPacket.getNext(),
+                        BluetoothGattCharacteristic.WRITE_TYPE_DEFAULT
+                )
+                delay(500)
+                if (result.error != XYBluetoothResult.ErrorCode.None) {
+                    errorCode = result.error
                 }
-
-                cont.resume(null)
             }
+            return@connection XYBluetoothResult(true)
         }
+        return errorCode
     }
 
 
@@ -224,8 +117,9 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
      *
      * @return A deferred ByteArray of the value read. If there was an error or timeout, will return null.
      */
-    private fun readIncoming(): Deferred<ByteArray?> = GlobalScope.async {
-        return@async suspendCoroutine<ByteArray?> { cont ->
+    suspend fun readIncoming(): ByteArray? {
+        Log.i(TAG, "readIncoming: started")
+        return suspendCoroutine { cont ->
             val key = this.toString() + Math.random().toString()
 
             centralCallback.addListener(key, object : XYBluetoothGattCallback() {
@@ -234,14 +128,18 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
 
                 var timeoutJob: Job = GlobalScope.launch {
                     delay(FIRST_NOTIFY_TIMEOUT.toLong())
-                    hasResumed = true
-                    centralCallback.removeListener(key)
-                    cont.resume(null)
+                    if (isActive) {
+                        Log.e(TAG, "readIncoming: timeout")
+                        hasResumed = true
+                        centralCallback.removeListener(key)
+                        cont.resume(null)
+                    }
                 }
 
                 var incomingPacket: XyoBluetoothIncomingPacket? = null
 
                 override fun onCharacteristicChanged(gatt: BluetoothGatt?, characteristic: BluetoothGattCharacteristic?) {
+                    Log.i(TAG, "readIncoming: onCharacteristicChanged")
                     super.onCharacteristicChanged(gatt, characteristic)
                     val value = characteristic?.value
 
@@ -277,6 +175,7 @@ open class XyoBluetoothClient : XYIBeaconBluetoothDevice {
 
 
     companion object : XYCreator() {
+        const val TAG = "XyoBluetoothClient"
         const val FIRST_NOTIFY_TIMEOUT = 12_000
         const val NOTIFY_TIMEOUT = 10_000
         const val MAX_MTU = 512

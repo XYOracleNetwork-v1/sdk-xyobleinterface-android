@@ -90,12 +90,6 @@ class MainActivity : FragmentActivity() {
         GlobalScope.launch {
             initScanner()
             initServer(this@MainActivity)
-            XyoBluetoothClient.enable(true)
-            XyoSentinelX.enable(true)
-            XyoBridgeX.enable(true)
-            XyoAndroidAppX.enable(true)
-            XyoIosAppX.enable(true)
-            XyoSha256WithSecp256K.enable()
         }
 
         val hasher = XyoBasicHashBase.createHashType(XyoSchemas.SHA_256, "SHA-256")
@@ -120,6 +114,7 @@ class MainActivity : FragmentActivity() {
         XyoBridgeX.enable(true)
         XyoAndroidAppX.enable(true)
         XyoIosAppX.enable(true)
+        XyoSha256WithSecp256K.enable()
         scanner = createNewScanner()
         try {
             scanner.start()
@@ -214,13 +209,14 @@ class MainActivity : FragmentActivity() {
         }
     }
 
-    private suspend fun initServer(context: Context): Boolean = GlobalScope.async {
-        if (XyoBleSdk.advertiser(context).startAdvertiser()?.hasError() == false) {
-            return@async false
+    private suspend fun initServer(context: Context): Boolean {
+        val advertiserResult = XyoBleSdk.advertiser(context).startAdvertiser()
+        if (advertiserResult?.hasError() == true) {
+            return false
         }
         XyoBleSdk.server(context).listener = serverCallback
-        return@async true
-    }.await()
+        return true
+    }
 
     private fun replaceFragment(fragment: Fragment) {
         ui {
@@ -257,17 +253,27 @@ class MainActivity : FragmentActivity() {
 
 
     private suspend fun tryBoundWitness(device: XyoBluetoothClient): XYBluetoothResult<XyoBoundWitness> {
+        Log.i(TAG, "tryBoundWitness: Started")
         return device.connection {
+            Log.i(TAG, "tryBoundWitness: Connected")
             val pipe = device.createPipe()
+
+            Log.i(TAG, "tryBoundWitness: CreatePipe: $pipe")
 
             if (pipe != null) {
                 val handler = XyoNetworkHandler(pipe)
 
+                Log.i(TAG, "tryBoundWitness: Starting BW")
                 val bw = node.boundWitness(handler, boundWitnessCatalog).await()
+                Log.i(TAG, "tryBoundWitness: Completing BW")
                 return@connection XYBluetoothResult(bw)
             }
 
             return@connection XYBluetoothResult<XyoBoundWitness>(null, XYBluetoothResult.ErrorCode.Unknown)
         }
+    }
+
+    companion object {
+        const val TAG = "MainActivity"
     }
 }

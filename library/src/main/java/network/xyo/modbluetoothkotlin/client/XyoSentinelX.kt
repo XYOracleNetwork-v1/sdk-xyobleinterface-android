@@ -89,7 +89,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param newPassword The password to change on the remote device.
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    suspend fun changePassword(password: ByteArray, newPassword: ByteArray): XYBluetoothResult<ByteArray>? {
+    suspend fun changePassword(password: ByteArray, newPassword: ByteArray): XYBluetoothResult.ErrorCode {
         val encoded = ByteBuffer.allocate(2 + password.size + newPassword.size)
                 .put((password.size + 1).toByte())
                 .put(password)
@@ -106,7 +106,7 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
      * @param password The password of the device to so it can write the boundWitnessData
      * @return An XYBluetoothError if there was an issue writing the packet.
      */
-    suspend fun changeBoundWitnessData(password: ByteArray, boundWitnessData: ByteArray): XYBluetoothResult<ByteArray>? {
+    suspend fun changeBoundWitnessData(password: ByteArray, boundWitnessData: ByteArray): XYBluetoothResult.ErrorCode {
         val encoded = ByteBuffer.allocate(3 + password.size + boundWitnessData.size)
                 .put((password.size + 1).toByte())
                 .put(password)

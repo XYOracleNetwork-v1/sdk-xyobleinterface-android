@@ -1,8 +1,6 @@
 package network.xyo.modbluetoothkotlin
 
 import android.content.Context
-import kotlinx.coroutines.GlobalScope
-import kotlinx.coroutines.async
 import kotlinx.coroutines.sync.Mutex
 import network.xyo.ble.generic.gatt.server.XYBluetoothAdvertiser
 import network.xyo.ble.generic.gatt.server.XYBluetoothGattServer
@@ -28,25 +26,25 @@ class XyoBleSdk {
             return newAdvertiser
         }
 
-        private suspend fun initServer(context: Context): XyoBluetoothServer = GlobalScope.async {
+        private suspend fun initServer(context: Context): XyoBluetoothServer {
             val newServer =  XyoBluetoothServer(XYBluetoothGattServer(context))
             newServer.initServer()
             server = newServer
-            return@async newServer
-        }.await()
+            return newServer
+        }
 
-        suspend fun server(context: Context): XyoBluetoothServer = GlobalScope.async {
+        suspend fun server(context: Context): XyoBluetoothServer {
             initServerMutex.lock(this)
             val result = server ?: initServer(context)
             initServerMutex.unlock(this)
-            return@async result
-        }.await()
+            return result
+        }
 
-        suspend fun advertiser(context: Context, major: UShort? = null, minor: UShort? = null): XyoBluetoothAdvertiser = GlobalScope.async {
+        suspend fun advertiser(context: Context, major: UShort? = null, minor: UShort? = null): XyoBluetoothAdvertiser {
             initAdvertiserMutex.lock(this)
             val result = advertiser ?: createNewAdvertiser(context, major, minor)
             initAdvertiserMutex.unlock(this)
-            return@async result
-        }.await()
+            return result
+        }
     }
 }
