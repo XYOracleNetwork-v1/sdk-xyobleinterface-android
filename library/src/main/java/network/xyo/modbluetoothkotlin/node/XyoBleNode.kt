@@ -56,7 +56,7 @@ open class XyoBleNode(private val procedureCatalog: XyoProcedureCatalog,
         }
     }
 
-    private suspend fun tryBoundWitnessWithDevice(device: XyoBluetoothClient) {
+    suspend fun tryBoundWitnessWithDevice(device: XyoBluetoothClient) {
         if (canBoundWitness) {
             canBoundWitness = false
 
