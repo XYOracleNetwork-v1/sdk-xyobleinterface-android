@@ -14,6 +14,7 @@ import network.xyo.modbluetoothkotlin.XyoUuids
 import network.xyo.modbluetoothkotlin.XyoUuids.NOTIFY_DESCRIPTOR
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothIncomingPacket
 import network.xyo.modbluetoothkotlin.packet.XyoBluetoothOutgoingPacket
+import network.xyo.modbluetoothkotlin.packet.XyoInputStream
 import network.xyo.sdkcorekotlin.network.XyoAdvertisePacket
 import network.xyo.sdkcorekotlin.network.XyoNetworkPipe
 import network.xyo.sdkobjectmodelkotlin.structure.XyoObjectStructure
@@ -55,7 +56,23 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                     if (device?.bluetoothClass?.majorDeviceClass == 0 && device.bluetoothClass.deviceClass == 0) {
                         Log.i(TAG, "onConnectionStateChange: ${device.bluetoothClass?.majorDeviceClass}:${device.bluetoothClass?.deviceClass} ")
                         GlobalScope.launch {
-                            val incoming = readPacket(bluetoothWriteCharacteristic, device)
+                            val inputStream = XyoInputStream()
+                            val writeKey = "writing ${Math.random()}"
+
+                            bluetoothWriteCharacteristic.addWriteResponder(writeKey, object : XYBluetoothWriteResponder {
+                                override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
+                                    if (device?.address == device?.address && writeRequestValue != null) {
+                                        inputStream.addChunk(writeRequestValue)
+                                        return true
+                                    }
+
+                                    return null
+                                }
+                            })
+
+                            val incoming = waitForInputStreamPacket(inputStream)
+
+                            bluetoothWriteCharacteristic.removeResponder(writeKey)
 
                             if (incoming != null) {
                                 val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, incoming)
@@ -101,6 +118,7 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
         }
 
 
+
         /**
          * Sends data to the other end of the pipe, in this case a BLE central/client. This function wraps sendAwait
          * with device connection functionality (e.g. listening for disconnects).
@@ -111,12 +129,16 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
          * true. The method will return null. Will also return null if there is an error.
          */
         override fun send(data: ByteArray, waitForResponse: Boolean): Deferred<ByteArray?> {
+            val inputStream = XyoInputStream()
+
             return GlobalScope.async {
                 if (!bluetoothServer.isDeviceConnected(bluetoothDevice)) {
                     return@async null
                 }
 
                 val disconnectKey = "$this disconnect"
+                val writeKey = "$this disconnect"
+
 
                 return@async suspendCancellableCoroutine<ByteArray?> { cont ->
                     GlobalScope.launch {
@@ -135,15 +157,29 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                         }
 
                         bluetoothServer.addListener(disconnectKey, listener)
+
+                        writeCharacteristic.addWriteResponder(writeKey, object : XYBluetoothWriteResponder {
+                            override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
+                                if (bluetoothDevice.address == device?.address && writeRequestValue != null) {
+                                    inputStream.addChunk(writeRequestValue)
+                                    return true
+                                }
+
+                                return null
+                            }
+                        })
+
+
                         sendAwaitAsync(data)
 
                         var response: ByteArray? = null
 
                         if (waitForResponse) {
-                            response = readPacket(bluetoothWriteCharacteristic, null)
+                            response = waitForInputStreamPacket(inputStream)
                         }
 
                         bluetoothServer.removeListener(disconnectKey)
+                        writeCharacteristic.removeResponder(writeKey)
 
                         val idempotent = cont.tryResume(response)
                         idempotent?.let {
@@ -228,77 +264,36 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
         }
     }
 
+    private suspend fun waitForInputStreamPacket (inputStream: XyoInputStream) : ByteArray? {
+        val currentWaitingPacket = inputStream.getOldestPacket()
 
-    /**
-     * Reads an entire packet from the client. This is done by having the client write to a characteristic. The
-     * timeout value for the first write is READ_TIMEOUT.
-     *
-     * @param writeCharacteristic The characteristic to read from
-     * @param bluetoothDevice The bluetooth device to read from.
-     * @return The deferred value of the read. If the request timed out, the method will return null. If there was
-     * an error reading, will return null.
-     */
-    private suspend fun readPacket(writeCharacteristic: XYBluetoothCharacteristic, bluetoothDevice: BluetoothDevice?): ByteArray? {
+        if (currentWaitingPacket != null) {
+            return currentWaitingPacket
+        }
+
         return suspendCancellableCoroutine { cont ->
-            val key = "readPacket$this ${Math.random()}"
-
-            Log.i(TAG, "readPacket: timeoutResume started [1]")
-            val timeoutResume = GlobalScope.launch {
-                delay(READ_TIMEOUT.toLong())
+            val timeoutJob = GlobalScope.launch {
                 delay(READ_TIMEOUT.toLong())
                 if (this.isActive) {
-                    writeCharacteristic.removeResponder(key)
                     Log.e(TAG, "readPacket: Timed Out!")
                     val idempotent = cont.tryResume(null)
+                    inputStream.onComplete = null
                     idempotent?.let {
                         cont.completeResume(it)
                     }
                 }
             }
 
-            writeCharacteristic.addWriteResponder(key, object : XYBluetoothWriteResponder {
-                var numberOfPackets = 0
-                var incomingPacket: XyoBluetoothIncomingPacket? = null
-
-                override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
-                    Log.i(TAG, "readPacket: onWriteRequest - $numberOfPackets")
-                    if (bluetoothDevice == null || bluetoothDevice.address == device?.address) {
-                        if (numberOfPackets == 0 && writeRequestValue != null) {
-                            incomingPacket = XyoBluetoothIncomingPacket(writeRequestValue)
-
-                            if (incomingPacket?.done == true) {
-                                writeCharacteristic.removeResponder(key)
-                                Log.i(TAG, "readPacket: onWriteRequest: timeoutResume.cancel [1]")
-                                timeoutResume.cancel()
-                                val idempotent = cont.tryResume(incomingPacket?.getCurrentBuffer())
-                                idempotent?.let {
-                                    Log.i(TAG, "readPacket: onWriteRequest: Resuming [1]")
-                                    cont.completeResume(it)
-                                }
-                            }
-                        } else if (writeRequestValue != null) {
-                            val finalPacket = incomingPacket?.addPacket(writeRequestValue)
-
-                            if (finalPacket != null) {
-                                writeCharacteristic.removeResponder(key)
-                                Log.i(TAG, "readPacket: onWriteRequest: timeoutResume.cancel [2]")
-                                timeoutResume.cancel()
-
-                                val idempotent = cont.tryResume(finalPacket)
-                                idempotent?.let {
-                                    Log.i(TAG, "readPacket: onWriteRequest: Resuming [2]")
-                                    cont.completeResume(it)
-                                }
-                            }
-                        }
-
-                        numberOfPackets++
-                        return true
-                    }
-
-                    return null
+            inputStream.onComplete = { value ->
+                val idempotent = cont.tryResume(value)
+                idempotent?.let {
+                    cont.completeResume(it)
                 }
-            })
+
+                timeoutJob.cancel()
+
+                null
+            }
         }
     }
 
