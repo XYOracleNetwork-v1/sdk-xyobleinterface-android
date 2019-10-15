@@ -135,11 +135,17 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
                         }
 
                         bluetoothServer.addListener(disconnectKey, listener)
+                        sendAwaitAsync(data)
 
-                        val readValue = sendAwaitAsync(data)
+                        var response: ByteArray? = null
+
+                        if (waitForResponse) {
+                            response = readPacket(bluetoothWriteCharacteristic, null)
+                        }
+
                         bluetoothServer.removeListener(disconnectKey)
 
-                        val idempotent = cont.tryResume(readValue)
+                        val idempotent = cont.tryResume(response)
                         idempotent?.let {
                             cont.completeResume(it)
                         }
