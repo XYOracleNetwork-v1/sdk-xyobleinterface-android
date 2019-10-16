@@ -88,11 +88,18 @@ class XyoBluetoothAdvertiser(
      */
     fun stopAdvertiser() {
         advertiser.stopAdvertising()
+        _started = false
     }
 
     suspend fun startAdvertiser(): XYBluetoothResult<out Int>? {
-        return advertiser.startAdvertising()
+        val result = advertiser.startAdvertising()
+        _started = result?.error == XYBluetoothResult.ErrorCode.None
+        return result
     }
+
+    var _started: Boolean = false
+    val started: Boolean
+        get() { return _started }
 
     companion object {
         const val APPLE_MANUFACTURER_ID = 76
