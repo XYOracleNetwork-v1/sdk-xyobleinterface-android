@@ -71,7 +71,7 @@ android {
 dependencies {
     implementation fileTree(dir: 'libs', include: ['*.jar'])
 
-    api 'network.xyo:sdk-core-kotlin:3.0.32'
+    api 'network.xyo:sdk-core-kotlin:3.0.33'
     api 'network.xyo:sdk-base-android:2.1.114'
     api 'network.xyo:sdk-ble-android:3.0.1075'
 
