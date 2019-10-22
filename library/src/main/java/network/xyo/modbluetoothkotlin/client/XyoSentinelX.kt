@@ -1,7 +1,9 @@
 package network.xyo.modbluetoothkotlin.client
 
+import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothGattCharacteristic
 import android.content.Context
+import android.os.Build
 import kotlinx.coroutines.*
 import network.xyo.ble.devices.xy.XY4BluetoothDevice
 import network.xyo.ble.devices.xy.XYFinderBluetoothDevice
@@ -24,8 +26,12 @@ import java.util.concurrent.ConcurrentHashMap
 import kotlin.experimental.and
 
 @kotlin.ExperimentalUnsignedTypes
-open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String) :
-        XyoBluetoothClient(context, scanResult, hash) {
+open class XyoSentinelX : XyoBluetoothClient {
+
+    constructor(context: Context, scanResult: XYScanResult, hash: String) : super(context, scanResult, hash)
+
+    constructor(context: Context, scanResult: XYScanResult, hash: String, transport: Int) : super(context, scanResult, hash, transport)
+
     private val sentinelListeners = HashMap<String, Listener>()
     private var lastButtonPressTime: Long = 0
 
@@ -200,7 +206,11 @@ open class XyoSentinelX(context: Context, scanResult: XYScanResult, hash: String
                         XYBluetoothDevice>
         ) {
             val hash = hashFromScanResult(scanResult)
-            val createdDevice = XyoSentinelX(context, scanResult, hash)
+            val createdDevice = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.M) {
+                XyoSentinelX(context, scanResult, hash, BluetoothDevice.TRANSPORT_LE)
+            } else {
+                XyoSentinelX(context, scanResult, hash)
+            }
             val foundDevice = foundDevices[hash]
             if (foundDevice != null) {
                 foundDevice.rssi = scanResult.rssi

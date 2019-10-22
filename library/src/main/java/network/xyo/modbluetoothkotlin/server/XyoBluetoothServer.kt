@@ -53,32 +53,36 @@ class XyoBluetoothServer(private val bluetoothServer: XYBluetoothGattServer) {
             when (newState) {
                 BluetoothGatt.STATE_CONNECTED -> {
                     //check to make sure we are being connected to.  A central should not have types
-                    if (device?.bluetoothClass?.majorDeviceClass == 0 && device.bluetoothClass.deviceClass == 0) {
-                        Log.i(TAG, "onConnectionStateChange: ${device.bluetoothClass?.majorDeviceClass}:${device.bluetoothClass?.deviceClass} ")
-                        GlobalScope.launch {
-                            val inputStream = XyoInputStream()
-                            val writeKey = "writing ${Math.random()}"
+                    device?.let {
+                        Log.i("Arie", "Type: ${it.type}")
+                        //this causes a problem when the other device also is broadcasting.  Need to find a way to prevent listening when connecting out
+                        //if (it.bluetoothClass?.majorDeviceClass == 0 && it.bluetoothClass.deviceClass == 0) {
+                            Log.i(TAG, "onConnectionStateChange: ${device.bluetoothClass?.majorDeviceClass}:${device.bluetoothClass?.deviceClass} ")
+                            GlobalScope.launch {
+                                val inputStream = XyoInputStream()
+                                val writeKey = "writing ${Math.random()}"
 
-                            bluetoothWriteCharacteristic.addWriteResponder(writeKey, object : XYBluetoothWriteResponder {
-                                override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
-                                    if (device?.address == device?.address && writeRequestValue != null) {
-                                        inputStream.addChunk(writeRequestValue)
-                                        return true
+                                bluetoothWriteCharacteristic.addWriteResponder(writeKey, object : XYBluetoothWriteResponder {
+                                    override fun onWriteRequest(writeRequestValue: ByteArray?, device: BluetoothDevice?): Boolean? {
+                                        if (device?.address == device?.address && writeRequestValue != null) {
+                                            inputStream.addChunk(writeRequestValue)
+                                            return true
+                                        }
+
+                                        return null
                                     }
+                                })
 
-                                    return null
+                                val incoming = waitForInputStreamPacket(inputStream)
+
+                                bluetoothWriteCharacteristic.removeResponder(writeKey)
+
+                                if (incoming != null) {
+                                    val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, incoming)
+                                    listener?.onPipe(pipe)
                                 }
-                            })
-
-                            val incoming = waitForInputStreamPacket(inputStream)
-
-                            bluetoothWriteCharacteristic.removeResponder(writeKey)
-
-                            if (incoming != null) {
-                                val pipe = XyoBluetoothServerPipe(device, bluetoothWriteCharacteristic, incoming)
-                                listener?.onPipe(pipe)
                             }
-                        }
+                        //}
                     }
                 }
             }

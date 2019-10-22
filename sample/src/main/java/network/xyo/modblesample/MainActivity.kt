@@ -249,6 +249,11 @@ class MainActivity : FragmentActivity() {
         override fun onBoundWitnessEndSuccess(boundWitness: XyoBoundWitness) {
             showBoundWitnessFragment(boundWitness)
         }
+
+        override fun onBoundWitnessEndFailure(error: Exception?) {
+            Log.e("Xyo", error.toString())
+            super.onBoundWitnessEndFailure(error)
+        }
     }
 
 
@@ -266,7 +271,9 @@ class MainActivity : FragmentActivity() {
                 Log.i(TAG, "tryBoundWitness: Starting BW")
                 val bw = node.boundWitness(handler, boundWitnessCatalog).await()
                 Log.i(TAG, "tryBoundWitness: Completing BW")
-                return@connection XYBluetoothResult(bw)
+                if (bw != null) {
+                    return@connection XYBluetoothResult(bw)
+                }
             }
 
             return@connection XYBluetoothResult<XyoBoundWitness>(null, XYBluetoothResult.ErrorCode.Unknown)
