@@ -2,11 +2,12 @@
 
 [![logo]](https://xy.company)
 
+**NOTE** This SDK is deprecated, please refer to the XYO Android SDK.
+
 # sdk-xyobleinterface-android
 
 [![](https://jitpack.io/v/XYOracleNetwork/mod-ble-android.svg)](https://jitpack.io/#XYOracleNetwork/mod-ble-android)
 [![](https://img.shields.io/gitter/room/XYOracleNetwork/Stardust.svg)](https://gitter.im/XYOracleNetwork/Dev)
-[![Known Vulnerabilities](https://snyk.io/test/github/XYOracleNetwork/sdk-xyobleinterface-android/badge.svg)](https://snyk.io/test/github/XYOracleNetwork/sdk-xyobleinterface-android)
 
 [![Build Status](https://travis-ci.org/XYOracleNetwork/sdk-xyobleinterface-android.svg?branch=master)](https://travis-ci.org/XYOracleNetwork/sdk-xyobleinterface-android)
 [![Maintainability](https://api.codeclimate.com/v1/badges/c574c6de0ea4049be0c3/maintainability)](https://codeclimate.com/github/XYOracleNetwork/sdk-xyobleinterface-android/maintainability)
