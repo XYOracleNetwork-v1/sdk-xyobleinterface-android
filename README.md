@@ -1,6 +1,6 @@
-[logo]: https://cdn.xy.company/img/brand/XY_Logo_GitHub.png
+[logo]: https://cdn.xy.company/img/brand/XYO_full_colored.png
 
-[![logo]](https://xy.company)
+[![logo]](https://xyo.network)
 
 **NOTE** This SDK is deprecated, please refer to the XYO Android SDK.
 
@@ -14,9 +14,20 @@
 [![Quality Gate Status](https://sonarcloud.io/api/project_badges/measure?project=XYOracleNetwork_sdk-xyobleinterface-android&metric=alert_status)](https://sonarcloud.io/dashboard?id=XYOracleNetwork_sdk-xyobleinterface-android)
 [![BCH compliance](https://bettercodehub.com/edge/badge/XYOracleNetwork/sdk-xyobleinterface-android?branch=master)](https://bettercodehub.com/)
 
+## Table of Contents
+
+-   [Title](#sdk-core-swift)
+-   [Getting Started](#getting-started)
+-   [Prerequisites](#prerequisites)
+-   [Maintainers](#maintainers)
+-   [License](#license)
+-   [Credits](#credits)
+
+
 A basic network module that complies to the XYO Network Provider Interface.
 
-## Installing
+## Getting Started
+
 You can add mod-bluetooth-android to your existing app by cloning the project and manually adding it to your build.gradle or by using JitPack:
 
 ```
@@ -29,12 +40,20 @@ dependencies {
 }
 ```
 
-#### Prerequisites
+## Prerequisites
+
 * JDK 1.8
 * Kotlin
 
-## License
-This project is licensed under the MIT License - see the LICENSE.md file for details
+## Maintainers
 
-<br><hr><br>
-<p align="center">Made with  ❤️  by [<b>XY - The Persistent Company</b>] (https://xy.company)</p>
+- Carter Harrison
+- Arie Trouw
+
+## License
+
+See the [LICENSE](LICENSE) file for license details.
+
+## Credits 
+
+Made with 🔥and ❄️ by [XYO](https://www.xyo.network)
